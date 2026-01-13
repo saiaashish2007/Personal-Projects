@@ -1,0 +1,15 @@
+# Core quant pipeline
+yfinance>=0.2.50
+
+# Pin numeric stack for stability/compatibility (avoid numpy 2.x breakages)
+numpy==1.26.4
+pandas==2.1.4
+
+# ML filter
+scikit-learn==1.3.2
+xgboost==1.7.6
+
+# News + impact (no API key; RSS + sentiment)
+requests>=2.31.0
+feedparser>=6.0.11
+vaderSentiment>=3.3.2
