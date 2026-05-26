@@ -146,6 +146,67 @@ The Streamlit trading dashboard includes:
 
 Yahoo Finance data is used only for frontend market context: crypto price charts, broad quote stats, and Coinbase news. The prediction engine itself still uses L2 order book snapshots from synthetic data, uploaded files, Coinbase, or Binance-compatible collectors.
 
+## AI Health Model (Skin Lesion Temporal Change Detection)
+
+This repository also includes an AI notebook (`AI Health Model.ipynb`) focused on **detecting clinically concerning changes in skin lesions over time** (baseline vs follow-up), rather than doing a “skin cancer classification” from a single photo.
+
+### What it predicts
+
+For an image pair (baseline + follow-up), the model outputs:
+- **Multi-class change label**: `None`, `Minor`, `Moderate`, `Significant`
+- **Binary label**: `Concerning` vs `Non-concerning`
+
+The notebook explicitly frames the model as a **monitoring/triage tool** (safer/legal intent), answering:
+> “Has this lesion changed in a clinically concerning way over time?”
+
+### Data and pair construction
+
+- Uses the **ISIC 2019 Challenge** dataset (downloaded via `kagglehub` in the notebook).
+- Creates **temporal training pairs** by simulating lesion evolution between baseline and follow-up using a temporal lesion simulator (progressive changes in lesion appearance such as size, border irregularity, and color variation).
+- Splits images into **train / validation / test** and wraps them in a `TemporalPairDataset` so each training example contains:
+  - `baseline` image tensor
+  - `followup` image tensor
+  - multi-class change target
+  - binary concerning target
+
+### Feature extraction pipeline (clinically motivated)
+
+Section 3 builds a lesion feature extractor that:
+- Performs a simple segmentation/foreground isolation (multiple thresholding strategies, then selects the best mask for the central lesion region)
+- Computes and tracks interpretable features for **shape**, **border**, and **color**:
+  - Shape: area, asymmetry, circularity
+  - Border: irregularity, edge smoothness
+  - Color: per-channel variance and color distribution/entropy
+
+These features are mainly used for simulation/analysis and interpretability, while the main prediction model is trained end-to-end.
+
+### Model architecture: ViT + temporal attention
+
+Section 4 defines `TemporalChangeDetectionViT`, a **Vision Transformer** model that:
+- Encodes baseline and follow-up images with a pretrained ViT backbone
+- Uses **temporal attention** (multi-head attention) to compare follow-up tokens against baseline tokens
+- Fuses baseline and follow-up representations and produces:
+  - multi-class logits (4 classes)
+  - binary logits (concerning vs non-concerning)
+
+### Training setup
+
+Section 5 uses a combined objective:
+- **Multi-class focal loss** (to handle class imbalance)
+- **Binary BCE-with-logits loss**
+- Weighted combination of the two losses
+
+Training uses common performance safeguards (batch sizing, workers, optional GPU optimizations, mixed precision when CUDA is available, and gradient clipping).
+
+### Reported evaluation (from the notebook)
+
+On the notebook’s test set evaluation, it prints:
+- **Multi-class accuracy**: `0.7650`
+- **Binary accuracy**: `0.9150`
+- **ROC-AUC (binary)**: `0.9533`
+
+It also prints confusion matrices and classification reports for both the multi-class and binary tasks.
+
 ## Next Upgrade
 
 After the REST snapshot collector works, the next step is a true WebSocket depth-update collector that stores incremental book changes. That would be closer to exchange-native streaming and would reduce the information loss from one-second polling. The current simulator and HTTP service are designed so a WebSocket collector can feed the same `MarketDataMessage` path later.
