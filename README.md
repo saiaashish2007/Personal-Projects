@@ -123,13 +123,12 @@ Prediction requests can use either the 40 canonical columns or nested `asks`/`bi
 ```bash
 curl -X POST http://127.0.0.1:8000/predict \
   -H "Content-Type: application/json" \
-  -d '{"asks": [[100.10, 5], [100.11, 6], [100.12, 7], [100.13, 8], [100.14, 9], [100.15, 10], [100.16, 11], [100.17, 12], [100.18, 13], [100.19, 14]], "bids": [[100.00, 5], [99.99, 6], [99.98, 7], [99.97, 8], [99.96, 9], [99.95, 10], [99.94, 11], [99.93, 12], [99.92, 13], [99.91, 14]]}'
+  -d '{"asks": [[100.10, 5], [100.11, 6], [100.12, 7], [100.13, 8], [100.14, 9], [100.15, 10], [100.16, 11], [100.17, 12], [100.18, 13], [100.19, 14]], "bids": [[100.00, 5], [99.99, 6], [99.98, 7], [99.97, 8], [99.96, 9], [99.95, 10], [99.94, 11], [99.93, 12], [99.92, 13], [99.91, 14]}'
 ```
 
 The service keeps a small in-memory history so rolling features such as spread averages and order-flow proxies update as messages arrive.
 
 ## Free Public UI
-
 The project includes a Streamlit trading dashboard in `streamlit_app.py`. It shows:
 
 - Dark Coinbase/trading-terminal style layout.
@@ -164,3 +163,4 @@ Yahoo Finance data is used only for frontend market context: crypto price charts
 ## Next Upgrade
 
 After the REST snapshot collector works, the next step is a true WebSocket depth-update collector that stores incremental book changes. That would be closer to exchange-native streaming and would reduce the information loss from one-second polling. The current simulator and HTTP service are designed so a WebSocket collector can feed the same `MarketDataMessage` path later.
+
