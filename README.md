@@ -128,8 +128,11 @@ curl -X POST http://127.0.0.1:8000/predict \
 
 The service keeps a small in-memory history so rolling features such as spread averages and order-flow proxies update as messages arrive.
 
-## Free Public UI
-The project includes a Streamlit trading dashboard in `streamlit_app.py`. It shows:
+## Live App
+
+**https://personal-projects-edihazbejm4yf53jdr9nfe.streamlit.app/**
+
+The Streamlit trading dashboard includes:
 
 - Dark Coinbase/trading-terminal style layout.
 - Yahoo Finance candlestick and volume chart for selected crypto tickers.
@@ -139,24 +142,7 @@ The project includes a Streamlit trading dashboard in `streamlit_app.py`. It sho
 - Confidence, mid-price, spread, microprice, queue imbalance, toxicity proxy, and latency.
 - Streaming-style feature charts.
 - Yahoo Finance crypto price charts and Coinbase (`COIN`) news.
-- Synthetic demo data, uploaded CSV data, local CSV data, or one live Coinbase BTC-USD snapshot.
-
-Run locally:
-
-```bash
-pip install -r requirements.txt
-PYTHONPATH=src streamlit run streamlit_app.py
-```
-
-Deploy for free on Streamlit Community Cloud:
-
-1. Push this project to a public GitHub repository.
-2. Go to [Streamlit Community Cloud](https://streamlit.io/cloud).
-3. Create a new app from the GitHub repository.
-4. Set the main file path to `streamlit_app.py`.
-5. Leave the default branch selected and deploy.
-
-Streamlit Cloud will install dependencies from `requirements.txt`. The app works without paid data because the default source is synthetic demo L2 data, and users can upload CSVs or fetch a Coinbase snapshot.
+- Synthetic demo data, uploaded CSV data, or one live Coinbase BTC-USD snapshot.
 
 Yahoo Finance data is used only for frontend market context: crypto price charts, broad quote stats, and Coinbase news. The prediction engine itself still uses L2 order book snapshots from synthetic data, uploaded files, Coinbase, or Binance-compatible collectors.
 
