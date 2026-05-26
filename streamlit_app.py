@@ -46,6 +46,8 @@ THEME = {
     "amber": "#f6c85f",
 }
 
+YAHOO_COOLDOWN_SECONDS = 300
+
 
 st.set_page_config(
     page_title="LOB Prediction Engine",
@@ -107,13 +109,78 @@ def load_order_book_from_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return matrix_to_order_book(frame.to_numpy(dtype=float))
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False)
 def load_yahoo_history(ticker: str, period: str, interval: str) -> pd.DataFrame:
     yf = import_yfinance()
     history = yf.Ticker(ticker).history(period=period, interval=interval)
     if history.empty:
         return pd.DataFrame()
     return history.reset_index()
+
+
+def synthetic_candles_from_l2(book: pd.DataFrame, features: pd.DataFrame, row_index: int) -> pd.DataFrame:
+    """Fallback OHLCV generator when Yahoo Finance is rate-limited/unavailable.
+
+    We derive an OHLCV-like series from the L2 mid-price and nearby depth for volume.
+    This keeps the UI usable even if external data fails.
+    """
+    # Use a small lookback window to create a visually reasonable chart.
+    window = min(len(book), 240)
+    start = max(0, row_index - window)
+    end = min(len(features), row_index + 1)
+    mid = features.iloc[start:end]["mid_price"].reset_index(drop=True)
+    if len(mid) < 10:
+        mid = features.iloc[: min(60, len(features))]["mid_price"].reset_index(drop=True)
+
+    # Aggregate mid-price into ~60 candles.
+    n_candles = 60
+    n = len(mid)
+    step = max(1, n // n_candles)
+
+    mids = mid.iloc[::step].reset_index(drop=True)
+    # Ensure we have enough points; if not, adjust by padding from the tail.
+    if len(mids) < 10:
+        mids = mid.reset_index(drop=True)
+
+    # Build OHLC from the full window by chunking.
+    chunks = [mid.iloc[i : i + step] for i in range(0, len(mid), step)]
+    opens = [c.iloc[0] for c in chunks if len(c) > 0]
+    closes = [c.iloc[-1] for c in chunks if len(c) > 0]
+    highs = [float(c.max()) for c in chunks if len(c) > 0]
+    lows = [float(c.min()) for c in chunks if len(c) > 0]
+
+    # Synthetic volume: sum of level-1 sizes around each chunk.
+    volume_series = features.iloc[start:end].reset_index(drop=True)
+    if "imbalance_total" in volume_series.columns:
+        # Approximate depth proxy using total depth from the raw book for the same range.
+        depth_proxy = []
+        for idx in range(start, end):
+            # total top-10 depth = sum of bid+ask sizes across levels
+            # (use level 1 as cheap proxy)
+            depth_proxy.append(
+                float(book.iloc[idx]["bid_size_1"] + book.iloc[idx]["ask_size_1"])
+            )
+        vol = pd.Series(depth_proxy)
+    else:
+        vol = pd.Series([1.0] * len(mid))
+    vols = [float(c.sum()) for c in [vol.iloc[i : i + step] for i in range(0, len(vol), step)]]
+
+    # Create a Datetime axis with uniform spacing.
+    # Streamlit/Plotly only needs an x column; real timestamps are not required for UI.
+    now = pd.Timestamp.utcnow().tz_localize(None)
+    freq = "1min"  # visual only
+    times = pd.date_range(end=now, periods=len(opens), freq=freq)
+
+    return pd.DataFrame(
+        {
+            "Datetime": times,
+            "Open": opens,
+            "High": highs,
+            "Low": lows,
+            "Close": closes[: len(opens)],
+            "Volume": vols[: len(opens)],
+        }
+    )
 
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -782,7 +849,10 @@ def prediction_class(prediction: str) -> str:
     return "prediction-stationary"
 
 
-def render_market_context() -> None:
+def render_market_context(
+    yahoo_news: list[dict[str, Any]] | None,
+    fetch_allowed: bool,
+) -> None:
     st.markdown(
         """
         <div class="terminal-header">
@@ -795,10 +865,16 @@ def render_market_context() -> None:
         """,
         unsafe_allow_html=True,
     )
-    try:
-        news_items = load_yahoo_news("COIN")
-    except Exception as exc:  # noqa: BLE001
-        st.warning(f"Yahoo Finance news is unavailable right now: {exc}")
+    if yahoo_news is not None:
+        news_items = yahoo_news
+    elif fetch_allowed:
+        try:
+            news_items = load_yahoo_news("COIN")
+        except Exception as exc:  # noqa: BLE001
+            st.warning(f"Yahoo Finance news is unavailable right now: {exc}")
+            return
+    else:
+        st.info("Yahoo Finance news is disabled. Enable it in the sidebar and refresh.")
         return
 
     if not news_items:
@@ -945,6 +1021,9 @@ def main() -> None:
         interval = st.selectbox("Candle interval", ["5m", "15m", "30m", "1h", "1d"], index=1)
         st.divider()
         st.markdown("**Prediction Data**")
+        use_yahoo_context = st.checkbox("Enable Yahoo market context", value=True)
+        news_limit = st.slider("News items", 1, 10, 5, step=1)
+        refresh_yahoo = st.button("Fetch Yahoo (candles + news)", type="primary")
         source = st.radio(
             "Choose source",
             ["Synthetic demo", "Upload CSV", "Local CSV path", "Live Coinbase snapshot"],
@@ -988,13 +1067,32 @@ def main() -> None:
                 st.warning(f"Live Coinbase fetch failed: {exc}. Falling back to synthetic data.")
                 book = synthetic_book(rows=3000, seed=42)
 
-    try:
-        market_history = load_yahoo_history(ticker, period, interval)
-        market_info = load_yahoo_info(ticker)
-    except Exception as exc:  # noqa: BLE001
-        market_history = pd.DataFrame()
-        market_info = {}
-        st.warning(f"Yahoo Finance chart data is unavailable right now: {exc}")
+    market_history = st.session_state.get("yahoo_market_history", pd.DataFrame())
+    market_info = st.session_state.get("yahoo_market_info", {})
+    yahoo_news: list[dict[str, Any]] | None = st.session_state.get("yahoo_news")
+
+    if use_yahoo_context:
+        last_attempt = st.session_state.get("yahoo_last_attempt", 0.0)
+        now = time.time()
+        can_attempt = (now - float(last_attempt)) >= YAHOO_COOLDOWN_SECONDS
+        # Avoid auto-fetch on every rerun; this prevents accidental "too many requests"
+        # in Streamlit Cloud when widgets trigger rerenders.
+        should_attempt = refresh_yahoo
+
+        if should_attempt and can_attempt:
+            st.session_state["yahoo_last_attempt"] = now
+            try:
+                market_history = load_yahoo_history(ticker, period, interval)
+                market_info = load_yahoo_info(ticker)
+                yahoo_news = load_yahoo_news("COIN")[: int(news_limit)]
+                st.session_state["yahoo_market_history"] = market_history
+                st.session_state["yahoo_market_info"] = market_info
+                st.session_state["yahoo_news"] = yahoo_news
+            except Exception as exc:  # noqa: BLE001
+                st.session_state["yahoo_market_history"] = pd.DataFrame()
+                st.session_state["yahoo_market_info"] = {}
+                st.session_state["yahoo_news"] = None
+                st.error(f"Yahoo Finance is rate-limited right now; using fallback candles. ({exc})")
 
     if len(book) < horizon + 20:
         st.error("Need more rows than the selected forecast horizon. Increase data rows or lower horizon.")
@@ -1068,7 +1166,7 @@ def main() -> None:
               <div class="terminal-header">
                 <div>
                   <div class="terminal-title">{ticker} Candlestick Chart</div>
-                  <div class="terminal-subtitle">Current Yahoo Finance OHLCV candles</div>
+                  <div class="terminal-subtitle">Yahoo Finance OHLCV (fallback to synthetic candles if rate-limited)</div>
                 </div>
                 <span class="pill">{period} / {interval}</span>
               </div>
@@ -1077,7 +1175,9 @@ def main() -> None:
             unsafe_allow_html=True,
         )
         if market_history.empty:
-            st.info("Yahoo Finance did not return candle data. The prediction panels still work.")
+            st.info("Yahoo Finance candles are unavailable (rate-limited). Showing synthetic candles derived from the L2 mid-price instead.")
+            synthetic_history = synthetic_candles_from_l2(book=book, features=features, row_index=row_index)
+            st.plotly_chart(create_candlestick_chart(synthetic_history, ticker), use_container_width=True)
         else:
             st.plotly_chart(create_candlestick_chart(market_history, ticker), use_container_width=True)
 
@@ -1179,7 +1279,10 @@ def main() -> None:
 
     with lower_right:
         st.markdown('<div class="terminal-card">', unsafe_allow_html=True)
-        render_market_context()
+        render_market_context(
+            yahoo_news=st.session_state.get("yahoo_news"),
+            fetch_allowed=use_yahoo_context and refresh_yahoo,
+        )
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.caption(
