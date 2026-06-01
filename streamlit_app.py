@@ -31,28 +31,33 @@ CRYPTO_TICKERS = {
     "Solana": "SOL-USD",
     "Dogecoin": "DOGE-USD",
 }
+# xAI-inspired tokens (see DESIGN.md)
 THEME = {
-    "bg": "#05070b",
-    "panel": "#0b0f14",
-    "panel_2": "#101720",
-    "border": "#1b2633",
-    "grid": "#1d2a36",
-    "text": "#e5edf5",
-    "muted": "#7f8b99",
-    "green": "#00d1a7",
-    "red": "#ff4d5a",
-    "blue": "#2f6bff",
-    "cyan": "#2dd4bf",
-    "amber": "#f6c85f",
+    "bg": "#0a0a0a",
+    "panel": "#191919",
+    "panel_2": "#1a1c20",
+    "border": "#212327",
+    "grid": "#212327",
+    "text": "#ffffff",
+    "body": "#dadbdf",
+    "muted": "#7d8187",
+    "green": "#a0c3ec",
+    "red": "#ff7a17",
+    "blue": "#7c3aed",
+    "cyan": "#c4b5fd",
+    "amber": "#ffc285",
+    "hairline": "#212327",
+    "pill_border": "rgba(255, 255, 255, 0.25)",
 }
 
 YAHOO_COOLDOWN_SECONDS = 300
 
 
 st.set_page_config(
-    page_title="LOB Prediction Engine",
-    page_icon=":chart_with_upwards_trend:",
+    page_title="LOB Predictor",
+    page_icon="◆",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 
@@ -208,191 +213,315 @@ def import_yfinance() -> Any:
 def inject_trading_terminal_css() -> None:
     st.markdown(
         f"""
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
         <style>
+        :root {{
+            --xai-canvas: {THEME["bg"]};
+            --xai-card: {THEME["panel"]};
+            --xai-soft: {THEME["panel_2"]};
+            --xai-hairline: {THEME["border"]};
+            --xai-ink: {THEME["text"]};
+            --xai-body: {THEME["body"]};
+            --xai-mute: {THEME["muted"]};
+            --xai-font: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            --xai-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+        }}
         .stApp {{
-            background:
-                radial-gradient(circle at top left, rgba(45, 212, 191, 0.08), transparent 28rem),
-                linear-gradient(135deg, {THEME["bg"]} 0%, #080b10 48%, #030507 100%);
+            background: {THEME["bg"]};
             color: {THEME["text"]};
+            font-family: var(--xai-font);
+            font-weight: 400;
         }}
         [data-testid="stSidebar"] {{
-            background: #06090d;
+            background: {THEME["bg"]};
             border-right: 1px solid {THEME["border"]};
         }}
         [data-testid="stSidebar"] * {{
             color: {THEME["text"]};
         }}
-        .block-container {{
-            padding-top: 1.1rem;
-            padding-bottom: 2rem;
-            max-width: 1500px;
+        [data-testid="stSidebar"] .stMarkdown h3 {{
+            font-family: var(--xai-font);
+            font-size: 1.25rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            color: {THEME["text"]};
         }}
-        h1, h2, h3 {{
-            letter-spacing: -0.03em;
+        [data-testid="stSidebar"] .stCaption {{
+            color: {THEME["muted"]};
+            font-size: 0.875rem;
+        }}
+        [data-testid="stSidebar"] strong {{
+            font-family: var(--xai-mono);
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: {THEME["text"]};
+        }}
+        .block-container {{
+            padding-top: 1.5rem;
+            padding-bottom: 2.5rem;
+            max-width: 1200px;
+        }}
+        h1, h2, h3, h4 {{
+            font-family: var(--xai-font);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            color: {THEME["text"]};
         }}
         div[data-testid="stMetric"] {{
-            background: linear-gradient(180deg, {THEME["panel_2"]}, {THEME["panel"]});
+            background: {THEME["panel"]};
             border: 1px solid {THEME["border"]};
-            border-radius: 14px;
-            padding: 0.75rem 0.85rem;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            box-shadow: none;
         }}
         div[data-testid="stMetricLabel"] p {{
             color: {THEME["muted"]};
-            font-size: 0.76rem;
+            font-family: var(--xai-mono);
+            font-size: 0.72rem;
+            font-weight: 400;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
         }}
         div[data-testid="stMetricValue"] {{
             color: {THEME["text"]};
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }}
+        div[data-testid="stMetricDelta"] {{
+            font-weight: 400;
         }}
         .terminal-card {{
-            background: linear-gradient(180deg, {THEME["panel_2"]}, {THEME["panel"]});
+            background: {THEME["panel"]};
             border: 1px solid {THEME["border"]};
-            border-radius: 16px;
-            padding: 1rem;
+            border-radius: 8px;
+            padding: 1.5rem;
             min-height: 100%;
-            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+            box-shadow: none;
         }}
         .terminal-header {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.75rem;
+            gap: 1rem;
             margin-bottom: 0.75rem;
         }}
-        .terminal-title {{
-            font-size: 0.86rem;
+        .terminal-hero {{
+            margin-bottom: 1.25rem;
+        }}
+        .terminal-hero-title {{
+            font-family: var(--xai-font);
+            font-size: clamp(1.75rem, 3vw, 2rem);
+            font-weight: 400;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
             color: {THEME["text"]};
-            font-weight: 700;
+            margin: 0.35rem 0 0;
+        }}
+        .terminal-title {{
+            font-family: var(--xai-mono);
+            font-size: 0.72rem;
+            color: {THEME["text"]};
+            font-weight: 400;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
         }}
         .terminal-subtitle {{
             color: {THEME["muted"]};
-            font-size: 0.78rem;
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.4;
+            margin-top: 0.25rem;
         }}
         .pill {{
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.28rem 0.6rem;
-            border-radius: 999px;
-            background: rgba(45, 212, 191, 0.08);
-            border: 1px solid rgba(45, 212, 191, 0.25);
-            color: {THEME["cyan"]};
-            font-size: 0.75rem;
-            font-weight: 700;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background: transparent;
+            border: 1px solid {THEME["pill_border"]};
+            color: {THEME["text"]};
+            font-family: var(--xai-font);
+            font-size: 0.875rem;
+            font-weight: 400;
+            white-space: nowrap;
+        }}
+        .pill-accent {{
+            border-color: rgba(255, 122, 23, 0.45);
+            color: {THEME["amber"]};
         }}
         .prediction-up {{
             color: {THEME["green"]};
-            text-shadow: 0 0 18px rgba(0, 209, 167, 0.25);
         }}
         .prediction-down {{
             color: {THEME["red"]};
-            text-shadow: 0 0 18px rgba(255, 77, 90, 0.25);
         }}
         .prediction-stationary {{
-            color: {THEME["amber"]};
+            color: {THEME["cyan"]};
         }}
         .news-item {{
             border-bottom: 1px solid {THEME["border"]};
-            padding: 0.65rem 0;
+            padding: 0.75rem 0;
         }}
         .news-item:last-child {{
             border-bottom: 0;
         }}
         .news-meta {{
             color: {THEME["muted"]};
-            font-size: 0.75rem;
-            margin-top: 0.2rem;
+            font-size: 0.8125rem;
+            margin-top: 0.35rem;
+            font-weight: 400;
+        }}
+        .news-item a {{
+            font-weight: 400;
         }}
         .dataframe {{
             background: {THEME["panel"]};
         }}
+        [data-testid="stDataFrame"] {{
+            border: 1px solid {THEME["border"]};
+            border-radius: 8px;
+            overflow: hidden;
+        }}
+        .stButton > button[kind="primary"] {{
+            background: {THEME["text"]} !important;
+            color: {THEME["bg"]} !important;
+            border: 1px solid {THEME["text"]} !important;
+            border-radius: 9999px !important;
+            font-family: var(--xai-font) !important;
+            font-weight: 400 !important;
+            padding: 0.4rem 1rem !important;
+        }}
+        .stButton > button[kind="secondary"],
+        .stButton > button:not([kind="primary"]) {{
+            background: transparent !important;
+            color: {THEME["text"]} !important;
+            border: 1px solid {THEME["pill_border"]} !important;
+            border-radius: 9999px !important;
+            font-weight: 400 !important;
+        }}
+        [data-baseweb="select"] > div,
+        [data-baseweb="input"] > div {{
+            background: {THEME["panel_2"]} !important;
+            border-color: {THEME["border"]} !important;
+            border-radius: 8px !important;
+            color: {THEME["text"]} !important;
+        }}
+        .stSlider [data-baseweb="slider"] div {{
+            color: {THEME["text"]};
+        }}
+        .stRadio > div {{
+            gap: 0.35rem;
+        }}
+        .stRadio label {{
+            font-size: 0.875rem;
+            font-weight: 400;
+        }}
+        hr {{
+            border-color: {THEME["border"]};
+        }}
+        .stAlert {{
+            background: {THEME["panel"]};
+            border: 1px solid {THEME["border"]};
+            border-radius: 8px;
+            color: {THEME["body"]};
+        }}
         .bbg-strip {{
-            background: #0b0b0b;
-            border: 1px solid #404040;
-            color: #d8d8d8;
-            font-family: Monaco, Menlo, Consolas, monospace;
+            background: {THEME["panel"]};
+            border: 1px solid {THEME["border"]};
+            color: {THEME["body"]};
+            font-family: var(--xai-mono);
             font-size: 0.78rem;
-            padding: 0.45rem 0.55rem;
+            padding: 0.5rem 0.65rem;
             margin-bottom: 0.35rem;
         }}
         .bbg-orange {{
-            color: #ff9f1a;
+            color: {THEME["red"]};
         }}
         .bbg-green {{
-            color: #55ff55;
+            color: {THEME["green"]};
         }}
         .bbg-red {{
-            color: #ff4b4b;
+            color: {THEME["red"]};
         }}
         .bbg-table {{
             width: 100%;
             border-collapse: collapse;
-            background: #050505;
-            color: #d9d9d9;
-            font-family: Monaco, Menlo, Consolas, monospace;
+            background: {THEME["bg"]};
+            color: {THEME["body"]};
+            font-family: var(--xai-mono);
             font-size: 0.72rem;
-            border: 1px solid #343434;
+            border: 1px solid {THEME["border"]};
         }}
         .bbg-table th {{
-            background: #ff9f1a;
-            color: #050505;
+            background: {THEME["panel_2"]};
+            color: {THEME["text"]};
             text-align: right;
-            padding: 0.22rem 0.28rem;
-            font-weight: 900;
-            border-right: 1px solid #151515;
+            padding: 0.35rem 0.45rem;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-right: 1px solid {THEME["border"]};
+            border-bottom: 1px solid {THEME["border"]};
         }}
         .bbg-table td {{
-            padding: 0.18rem 0.28rem;
+            padding: 0.22rem 0.45rem;
             text-align: right;
-            border-right: 1px solid #202020;
-            border-bottom: 1px solid #151515;
+            border-right: 1px solid {THEME["border"]};
+            border-bottom: 1px solid {THEME["border"]};
             white-space: nowrap;
         }}
         .bbg-table tr:nth-child(even) td {{
-            background: #0b0b0b;
+            background: {THEME["panel"]};
         }}
         .bbg-level {{
-            color: #ffbf4d;
-            font-weight: 900;
+            color: {THEME["amber"]};
+            font-weight: 400;
         }}
         .bbg-bid {{
-            color: #69a8ff;
+            color: {THEME["green"]};
         }}
         .bbg-ask {{
-            color: #ff6b6b;
+            color: {THEME["red"]};
         }}
         .bbg-imb-pos {{
-            color: #55ff55;
-            font-weight: 800;
+            color: {THEME["green"]};
+            font-weight: 400;
         }}
         .bbg-imb-neg {{
-            color: #ff4b4b;
-            font-weight: 800;
+            color: {THEME["red"]};
+            font-weight: 400;
         }}
         .depth-summary-grid {{
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.45rem;
+            gap: 0.5rem;
             margin-top: 0.6rem;
         }}
         .depth-summary-card {{
-            border: 1px solid #323232;
-            background: #090909;
-            padding: 0.45rem;
-            font-family: Monaco, Menlo, Consolas, monospace;
+            border: 1px solid {THEME["border"]};
+            background: {THEME["panel"]};
+            border-radius: 8px;
+            padding: 0.55rem;
+            font-family: var(--xai-mono);
         }}
         .depth-summary-label {{
-            color: #ff9f1a;
+            color: {THEME["muted"]};
             font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }}
         .depth-summary-value {{
-            color: #f4f4f4;
+            color: {THEME["text"]};
             font-size: 1rem;
-            font-weight: 900;
+            font-weight: 400;
+        }}
+        #MainMenu, footer, header {{
+            visibility: hidden;
         }}
         </style>
         """,
@@ -519,98 +648,115 @@ def bloomberg_depth_html(book: pd.DataFrame, row_index: int) -> str:
         <style>
         body {{
             margin: 0;
-            background: #050505;
-            color: #d9d9d9;
-            font-family: Monaco, Menlo, Consolas, monospace;
+            background: #0a0a0a;
+            color: #dadbdf;
+            font-family: "Geist Mono", ui-monospace, Menlo, Monaco, monospace;
+            font-weight: 400;
         }}
         .shell {{
-            border: 1px solid #303030;
-            background: #050505;
+            border: 1px solid #212327;
+            background: #0a0a0a;
             min-height: 100vh;
         }}
         .topbar {{
             display: grid;
             grid-template-columns: 1.2fr 0.9fr 0.9fr 0.9fr 0.9fr;
             gap: 2px;
-            background: #131313;
-            border-bottom: 1px solid #2d2d2d;
+            background: #191919;
+            border-bottom: 1px solid #212327;
             padding: 4px;
         }}
         .tab {{
-            background: #ff9f1a;
-            color: #080808;
-            font-weight: 900;
-            padding: 5px 8px;
-            font-size: 13px;
+            background: #1a1c20;
+            color: #ffffff;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 6px 10px;
+            font-size: 11px;
+            border: 1px solid #212327;
+            border-radius: 8px;
         }}
         .status {{
             background: #0a0a0a;
-            color: #dcdcdc;
-            padding: 5px 8px;
-            font-size: 13px;
+            color: #dadbdf;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid #212327;
+            border-radius: 8px;
         }}
-        .orange {{ color: #ff9f1a; }}
-        .pos {{ color: #55ff55; font-weight: 900; }}
-        .neg {{ color: #ff4b4b; font-weight: 900; }}
+        .orange {{ color: #ff7a17; }}
+        .pos {{ color: #a0c3ec; font-weight: 400; }}
+        .neg {{ color: #ff7a17; font-weight: 400; }}
         .strip {{
-            background: #0b0b0b;
-            border-top: 1px solid #303030;
-            border-bottom: 1px solid #303030;
-            padding: 8px 10px;
-            font-size: 13px;
+            background: #191919;
+            border-top: 1px solid #212327;
+            border-bottom: 1px solid #212327;
+            padding: 10px 12px;
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }}
         table {{
             width: 100%;
             border-collapse: collapse;
-            background: #050505;
-            font-size: 15px;
+            background: #0a0a0a;
+            font-size: 14px;
         }}
         th {{
-            background: #ff9f1a;
-            color: #050505;
+            background: #1a1c20;
+            color: #ffffff;
             text-align: right;
-            padding: 7px 8px;
-            font-weight: 900;
-            border-right: 1px solid #151515;
+            padding: 8px 10px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 11px;
+            border-right: 1px solid #212327;
+            border-bottom: 1px solid #212327;
         }}
         td {{
-            padding: 6px 8px;
+            padding: 6px 10px;
             text-align: right;
-            border-right: 1px solid #202020;
-            border-bottom: 1px solid #151515;
+            border-right: 1px solid #212327;
+            border-bottom: 1px solid #212327;
             white-space: nowrap;
         }}
-        tr:nth-child(even) td {{ background: #0b0b0b; }}
-        .level {{ color: #ffbf4d; font-weight: 900; text-align: center; }}
-        .bid {{ color: #69a8ff; }}
-        .ask {{ color: #ff6b6b; }}
+        tr:nth-child(even) td {{ background: #191919; }}
+        .level {{ color: #ffc285; font-weight: 400; text-align: center; }}
+        .bid {{ color: #a0c3ec; }}
+        .ask {{ color: #ff7a17; }}
         .summary {{
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 8px;
-            padding: 10px;
-            background: #070707;
+            padding: 12px;
+            background: #0a0a0a;
         }}
         .card {{
-            border: 1px solid #323232;
-            background: #090909;
-            padding: 10px;
+            border: 1px solid #212327;
+            background: #191919;
+            border-radius: 8px;
+            padding: 12px;
         }}
         .label {{
-            color: #ff9f1a;
-            font-size: 12px;
-            margin-bottom: 4px;
+            color: #7d8187;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
         }}
         .value {{
-            color: #f4f4f4;
-            font-size: 20px;
-            font-weight: 900;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: -0.02em;
         }}
         .foot {{
-            padding: 10px;
-            color: #a8a8a8;
+            padding: 12px;
+            color: #7d8187;
             font-size: 12px;
-            border-top: 1px solid #222;
+            border-top: 1px solid #212327;
         }}
         </style>
         </head>
@@ -857,10 +1003,10 @@ def render_market_context(
         """
         <div class="terminal-header">
           <div>
-            <div class="terminal-title">Coinbase / Crypto News</div>
-            <div class="terminal-subtitle">Yahoo Finance API feed for COIN and crypto market context</div>
+            <div class="terminal-title">Market news</div>
+            <div class="terminal-subtitle">Yahoo Finance feed for COIN and crypto context</div>
           </div>
-          <span class="pill">YF LIVE</span>
+          <span class="pill">Yahoo</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -892,7 +1038,7 @@ def render_market_context(
             st.markdown(
                 f"""
                 <div class="news-item">
-                  <a href="{href}" target="_blank" style="color:{THEME["text"]}; text-decoration:none; font-weight:700;">{title}</a>
+                  <a href="{href}" target="_blank" style="color:{THEME["text"]}; text-decoration:none; font-weight:400;">{title}</a>
                   <div class="news-meta">{publisher} | {published_text}</div>
                 </div>
                 """,
@@ -902,7 +1048,7 @@ def render_market_context(
             st.markdown(
                 f"""
                 <div class="news-item">
-                  <div style="color:{THEME["text"]}; font-weight:700;">{title}</div>
+                  <div style="color:{THEME["text"]}; font-weight:400;">{title}</div>
                   <div class="news-meta">{publisher} | {published_text}</div>
                 </div>
                 """,
@@ -963,12 +1109,13 @@ def render_bloomberg_depth_page(
     depth = multi_level_depth_features(book, row_index)
     st.markdown(
         f"""
-        <div class="terminal-header">
+        <div class="terminal-header terminal-hero">
           <div>
-            <div class="terminal-title">Bloomberg-Style Multi-Level Order Book</div>
-            <div class="terminal-subtitle">{ticker} top 10 bid/ask liquidity monitor</div>
+            <div class="terminal-title">Depth monitor</div>
+            <div class="terminal-hero-title">Multi-level order book</div>
+            <div class="terminal-subtitle">{ticker} · top 10 bid/ask liquidity</div>
           </div>
-          <span class="pill">FULL SCREEN DEPTH</span>
+          <span class="pill">Full screen</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1005,12 +1152,12 @@ def main() -> None:
     inject_trading_terminal_css()
 
     with st.sidebar:
-        st.markdown("### LOB TERMINAL")
-        st.caption("Coinbase-style trading dashboard")
+        st.markdown("### LOB Predictor")
+        st.caption("Limit-order-book direction engine")
         st.divider()
         page = st.radio(
             "Page",
-            ["Trading Terminal", "Bloomberg Depth Monitor"],
+            ["Trading Terminal", "Depth Monitor"],
             label_visibility="collapsed",
         )
         st.divider()
@@ -1119,7 +1266,7 @@ def main() -> None:
     prediction_name = LABEL_NAMES[prediction]
     confidence = float(probabilities[prediction])
 
-    if page == "Bloomberg Depth Monitor":
+    if page == "Depth Monitor":
         render_bloomberg_depth_page(book, row_index, ticker, prediction_name, confidence)
         return
 
@@ -1139,12 +1286,13 @@ def main() -> None:
 
     st.markdown(
         f"""
-        <div class="terminal-header">
+        <div class="terminal-header terminal-hero">
           <div>
-            <div class="terminal-title">LOB Prediction Trading Terminal</div>
-            <div class="terminal-subtitle">COINBASE {ticker} / Yahoo Finance candles / L2 prediction engine</div>
+            <div class="terminal-title">Trading terminal</div>
+            <div class="terminal-hero-title">LOB prediction engine</div>
+            <div class="terminal-subtitle">{ticker} · Yahoo candles · L2 replay</div>
           </div>
-          <span class="pill">LIVE SIMULATION</span>
+          <span class="pill pill-accent">Live simulation</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1209,7 +1357,7 @@ def main() -> None:
             f"""
             <div class="terminal-card" style="margin-top:0.75rem;">
               <div class="terminal-title">Spread</div>
-              <div style="font-size:1.8rem;font-weight:800;color:{THEME["cyan"]};">{feature_row["spread"]:.5f}</div>
+              <div style="font-size:1.75rem;font-weight:400;letter-spacing:-0.02em;color:{THEME["cyan"]};">{feature_row["spread"]:.5f}</div>
               <div class="terminal-subtitle">Best ask minus best bid</div>
             </div>
             """,
@@ -1221,13 +1369,13 @@ def main() -> None:
             f"""
             <div class="terminal-card">
               <div class="terminal-title">Prediction</div>
-              <div class="{prediction_class(prediction_name)}" style="font-size:2.7rem;font-weight:900;margin-top:0.4rem;">
-                {prediction_name.upper()}
+              <div class="{prediction_class(prediction_name)}" style="font-size:2.25rem;font-weight:400;letter-spacing:-0.03em;margin-top:0.5rem;">
+                {prediction_name}
               </div>
               <div class="terminal-subtitle">Short-horizon mid-price movement</div>
               <div style="height:0.75rem;"></div>
-              <div class="terminal-subtitle">Confidence</div>
-              <div style="font-size:1.45rem;font-weight:800;">{confidence:.1%}</div>
+              <div class="terminal-title">Confidence</div>
+              <div style="font-size:1.35rem;font-weight:400;letter-spacing:-0.02em;color:{THEME["text"]};">{confidence:.1%}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1259,11 +1407,11 @@ def main() -> None:
         st.markdown(
             f"""
             <div class="terminal-card">
-              <div class="terminal-title">Multi-Level Depth</div>
-              <div class="terminal-subtitle">Open the Bloomberg Depth Monitor page for the full table</div>
+              <div class="terminal-title">Multi-level depth</div>
+              <div class="terminal-subtitle">Open Depth Monitor in the sidebar for the full bid/ask table</div>
               <div style="height:0.7rem;"></div>
-              <div style="color:{THEME["muted"]};font-size:0.82rem;">
-                The full multi-level book is now on its own subpage so the dense bid/ask table has enough room.
+              <div style="color:{THEME["muted"]};font-size:0.875rem;font-weight:400;">
+                The full multi-level book lives on its own page so the dense ladder has enough room.
               </div>
             </div>
             """,
@@ -1275,7 +1423,7 @@ def main() -> None:
         summary_cols[1].metric("Weighted Imb", f"{depth['weighted_imbalance']:+.2%}")
         summary_cols[0].metric("Cum Bid", f"{depth['bid_total']:,.0f}")
         summary_cols[1].metric("Cum Ask", f"{depth['ask_total']:,.0f}")
-        st.info("Use the sidebar page selector: Bloomberg Depth Monitor.")
+        st.info("Use the sidebar page selector: Depth Monitor.")
 
     with lower_right:
         st.markdown('<div class="terminal-card">', unsafe_allow_html=True)
