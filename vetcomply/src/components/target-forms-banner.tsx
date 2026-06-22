@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowRight, FileText, Sparkles } from "lucide-react";
 import { targetForms } from "@/lib/forms-data";
 
@@ -31,13 +30,13 @@ export function TargetFormsBanner() {
             </div>
           </div>
         </div>
-        <Link
-          href="/agent"
+        <a
+          href="#compliance-agent"
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
         >
           Try Compliance Agent
           <ArrowRight className="h-4 w-4" />
-        </Link>
+        </a>
       </div>
     </section>
   );

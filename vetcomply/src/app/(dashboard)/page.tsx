@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ComplianceAgent } from "@/components/compliance-agent";
 import { StatCard } from "@/components/stat-card";
 import { TargetFormsBanner } from "@/components/target-forms-banner";
 import { SeverityBadge, StatusBadge } from "@/components/status-badge";
@@ -50,6 +51,10 @@ export default function OverviewPage() {
       </section>
 
       <TargetFormsBanner />
+
+      <section id="compliance-agent">
+        <ComplianceAgent />
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">

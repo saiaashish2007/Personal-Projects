@@ -26,13 +26,13 @@ export default function LicensesPage() {
             Renewal calendar across all locations — replaces spreadsheet tracking.
           </p>
         </div>
-        <Link
-          href="/agent"
+        <a
+          href="/#compliance-agent"
           className="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-100"
         >
           <Sparkles className="h-4 w-4" />
           Pre-fill DEA Form 224a
-        </Link>
+        </a>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
-  Bot,
   Building2,
   ClipboardList,
   FileCheck2,
@@ -19,7 +18,6 @@ const nav = [
   { href: "/locations", label: "Locations", icon: Building2 },
   { href: "/acquisitions", label: "Acquisitions", icon: ClipboardList },
   { href: "/licenses", label: "Licenses & DEA", icon: FileCheck2 },
-  { href: "/agent", label: "Compliance Agent", icon: Bot },
   { href: "/alerts", label: "Alerts", icon: AlertTriangle },
 ];
 
