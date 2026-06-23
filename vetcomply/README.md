@@ -2,34 +2,45 @@
 
 **Compliance OS for PE-backed veterinary roll-ups** — demo for VC pitches. Tracks DEA registrations, state licenses, controlled substance compliance, M&A diligence, and a **Compliance Agent** that pre-fills regulatory forms.
 
-## Run locally (Streamlit)
+## Run locally
 
 ```bash
 cd vetcomply
-pip install -r requirements.txt
-streamlit run streamlit_app.py
+npm install
+npm run dev
 ```
 
-Open the URL shown in the terminal (usually http://localhost:8501).
+Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy on Streamlit Community Cloud (free public link)
+## Deploy on Vercel (free public link)
 
-1. Push this folder to GitHub (see below).
-2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
-3. Click **New app** → select your repo.
-4. Set **Main file path** to: `vetcomply/streamlit_app.py`
-5. Set **App directory** (if prompted) to: `vetcomply`
-6. Deploy — you'll get a URL like `https://vetcomply-xxx.streamlit.app` to share with VCs.
+This app is a standard Next.js project. Deploy it from GitHub in a few minutes:
+
+1. Push this repo to GitHub.
+2. Go to [vercel.com/new](https://vercel.com/new) and import your repository.
+3. Set **Root Directory** to `vetcomply` (the app lives in a subfolder of the repo).
+4. Framework preset should auto-detect **Next.js** — leave build command as `npm run build` and output as default.
+5. Click **Deploy**.
+
+Vercel will give you a URL like `https://vetcomply-xxx.vercel.app` to share with VCs. Every push to `main` redeploys automatically.
+
+### CLI deploy (optional)
+
+```bash
+cd vetcomply
+npx vercel
+```
+
+Follow the prompts. Use the same root directory if deploying from the monorepo root.
 
 ## Demo screens
 
 | Page | What it shows |
 |------|----------------|
-| **Overview** | Portfolio health, alerts, acquisition pipeline |
+| **Overview** | Portfolio health, Compliance Agent, alerts, acquisition pipeline |
 | **Locations** | Per-clinic DEA, license, CS log status |
 | **Acquisitions** | M&A diligence findings + checklists |
 | **Licenses & DEA** | Renewal calendar |
-| **Compliance Agent** | Interactive pre-fill for DEA 224a, biennial inventory, Form 106, etc. |
 | **Alerts** | Expired DEAs, renewal deadlines |
 
 ## Pitch framing
@@ -42,19 +53,10 @@ Open the URL shown in the terminal (usually http://localhost:8501).
 
 ```
 vetcomply/
-├── streamlit_app.py    # ← deploy this (Streamlit Cloud)
-├── mock_data.py        # demo data
-├── requirements.txt
-├── .streamlit/config.toml
-└── src/                # optional Next.js version (local dev only)
+├── src/
+│   ├── app/              # Next.js pages (Overview, Locations, etc.)
+│   ├── components/       # UI components (sidebar, compliance agent, etc.)
+│   └── lib/              # Mock data, form definitions, utilities
+├── package.json
+└── next.config.ts
 ```
-
-## Next.js version (optional)
-
-A Next.js UI also exists under `src/` for local development:
-
-```bash
-npm install && npm run dev
-```
-
-For sharing with VCs, use the **Streamlit** deploy above.
