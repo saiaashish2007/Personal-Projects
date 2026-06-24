@@ -14,11 +14,11 @@ import { organization } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/locations", label: "Locations", icon: Building2 },
-  { href: "/acquisitions", label: "Acquisitions", icon: ClipboardList },
-  { href: "/licenses", label: "Licenses & DEA", icon: FileCheck2 },
-  { href: "/alerts", label: "Alerts", icon: AlertTriangle },
+  { href: "/demo", label: "Overview", icon: LayoutDashboard },
+  { href: "/demo/locations", label: "Locations", icon: Building2 },
+  { href: "/demo/acquisitions", label: "Acquisitions", icon: ClipboardList },
+  { href: "/demo/licenses", label: "Licenses & DEA", icon: FileCheck2 },
+  { href: "/demo/alerts", label: "Alerts", icon: AlertTriangle },
 ];
 
 export function Sidebar() {
@@ -50,7 +50,9 @@ export function Sidebar() {
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {nav.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+          const active =
+            pathname === href ||
+            (href !== "/demo" && pathname.startsWith(`${href}/`));
           return (
             <Link
               key={href}
@@ -70,6 +72,12 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-slate-800 px-5 py-4">
+        <Link
+          href="/"
+          className="mb-3 block text-xs font-medium text-slate-400 hover:text-white"
+        >
+          ← Back to website
+        </Link>
         <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
           Demo mode — mock data for VC pitch
         </p>

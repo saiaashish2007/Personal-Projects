@@ -1,6 +1,6 @@
 # VetComply
 
-**Compliance OS for PE-backed veterinary roll-ups** — demo for VC pitches. Tracks DEA registrations, state licenses, controlled substance compliance, M&A diligence, and a **Compliance Agent** that pre-fills regulatory forms.
+**Compliance OS for PE-backed veterinary roll-ups** — company website + interactive demo for VC pitches. Tracks DEA registrations, state licenses, controlled substance compliance, M&A diligence, and a **Compliance Agent** that pre-fills regulatory forms.
 
 ## Run locally
 
@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) for the company website. The interactive demo lives at [http://localhost:3000/demo](http://localhost:3000/demo).
 
 ## Deploy on Vercel (free public link)
 
@@ -22,7 +22,7 @@ This app is a standard Next.js project. Deploy it from GitHub in a few minutes:
 4. Framework preset should auto-detect **Next.js** — leave build command as `npm run build` and output as default.
 5. Click **Deploy**.
 
-Vercel will give you a URL like `https://vetcomply-xxx.vercel.app` to share with VCs. Every push to `main` redeploys automatically.
+Vercel will give you a URL like `https://vetcomply-xxx.vercel.app` for the company site. Share `/demo` for the interactive product walkthrough. Every push to `main` redeploys automatically.
 
 ### CLI deploy (optional)
 
@@ -33,15 +33,16 @@ npx vercel
 
 Follow the prompts. Use the same root directory if deploying from the monorepo root.
 
-## Demo screens
+## Site structure
 
-| Page | What it shows |
-|------|----------------|
-| **Overview** | Portfolio health, Compliance Agent, alerts, acquisition pipeline |
-| **Locations** | Per-clinic DEA, license, CS log status |
-| **Acquisitions** | M&A diligence findings + checklists |
-| **Licenses & DEA** | Renewal calendar |
-| **Alerts** | Expired DEAs, renewal deadlines |
+| Route | What it shows |
+|-------|----------------|
+| **/** | Company website — who we are, platform overview, contact |
+| **/demo** | Interactive demo — portfolio health, Compliance Agent, alerts |
+| **/demo/locations** | Per-clinic DEA, license, CS log status |
+| **/demo/acquisitions** | M&A diligence findings + checklists |
+| **/demo/licenses** | Renewal calendar |
+| **/demo/alerts** | Expired DEAs, renewal deadlines |
 
 ## Pitch framing
 
@@ -54,9 +55,11 @@ Follow the prompts. Use the same root directory if deploying from the monorepo r
 ```
 vetcomply/
 ├── src/
-│   ├── app/              # Next.js pages (Overview, Locations, etc.)
-│   ├── components/       # UI components (sidebar, compliance agent, etc.)
-│   └── lib/              # Mock data, form definitions, utilities
+│   ├── app/
+│   │   ├── (marketing)/    # Company website (/)
+│   │   └── (dashboard)/    # Interactive demo (/demo/*)
+│   ├── components/         # UI components (sidebar, compliance agent, etc.)
+│   └── lib/                # Mock data, form definitions, utilities
 ├── package.json
 └── next.config.ts
 ```

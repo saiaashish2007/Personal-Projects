@@ -60,7 +60,7 @@ export default function OverviewPage() {
         <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h3 className="font-semibold text-slate-900">Critical alerts</h3>
-            <Link href="/alerts" className="text-sm font-medium text-teal-600 hover:text-teal-700">
+            <Link href="/demo/alerts" className="text-sm font-medium text-teal-600 hover:text-teal-700">
               View all
             </Link>
           </div>
@@ -83,7 +83,7 @@ export default function OverviewPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h3 className="font-semibold text-slate-900">Acquisition pipeline</h3>
             <Link
-              href="/acquisitions"
+              href="/demo/acquisitions"
               className="text-sm font-medium text-teal-600 hover:text-teal-700"
             >
               View diligence
@@ -125,7 +125,7 @@ export default function OverviewPage() {
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="font-semibold text-slate-900">Locations needing attention</h3>
           <Link
-            href="/locations"
+            href="/demo/locations"
             className="text-sm font-medium text-teal-600 hover:text-teal-700"
           >
             All locations

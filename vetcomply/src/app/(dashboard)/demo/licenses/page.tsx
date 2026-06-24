@@ -27,7 +27,7 @@ export default function LicensesPage() {
           </p>
         </div>
         <a
-          href="/#compliance-agent"
+          href="/demo#compliance-agent"
           className="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-100"
         >
           <Sparkles className="h-4 w-4" />
