@@ -7,19 +7,19 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "#platform", label: "Platform" },
-  { href: "#about", label: "About" },
-  { href: "#contact", label: "Contact" },
+  { href: "#security", label: "Security" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function MarketingHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-200/60 bg-[#fafaf9]/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+    <header className="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/90 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-neutral-900" strokeWidth={1.75} />
-          <span className="text-sm font-medium tracking-tight text-neutral-900">
+          <span className="text-base font-semibold tracking-tight text-neutral-900">
             VetComply
           </span>
         </Link>
@@ -34,6 +34,12 @@ export function MarketingHeader() {
               {label}
             </a>
           ))}
+          <a
+            href="#contact"
+            className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+          >
+            Contact
+          </a>
         </nav>
 
         <button
@@ -48,21 +54,23 @@ export function MarketingHeader() {
 
       <div
         className={cn(
-          "border-t border-neutral-100 bg-[#fafaf9] px-6 py-4 md:hidden",
+          "border-t border-neutral-100 bg-white px-6 py-4 md:hidden",
           mobileOpen ? "block" : "hidden",
         )}
       >
         <nav className="flex flex-col gap-3">
-          {navLinks.map(({ href, label }) => (
-            <a
-              key={href}
-              href={href}
-              className="text-sm text-neutral-600"
-              onClick={() => setMobileOpen(false)}
-            >
-              {label}
-            </a>
-          ))}
+          {[...navLinks, { href: "#contact", label: "Contact" }].map(
+            ({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                className="text-sm text-neutral-600"
+                onClick={() => setMobileOpen(false)}
+              >
+                {label}
+              </a>
+            ),
+          )}
         </nav>
       </div>
     </header>
