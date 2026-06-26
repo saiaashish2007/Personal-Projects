@@ -1,16 +1,16 @@
 const integrations = [
+  "Cursor",
+  "Claude Desktop",
   "ezyVet",
-  "IDEXX Neo",
-  "VetSnap",
-  "Cornerstone",
-  "Avimark",
-  "Dataco",
-  "Provet",
-  "Hippo Manager",
-  "Shepherd",
-  "DaySmart Vet",
   "Workday",
   "NetSuite",
+  "Dataco",
+  "VDR exports",
+  "REST API",
+  "MCP",
+  "Postman",
+  "Shepherd",
+  "IDEXX Neo",
 ];
 
 export function IntegrationsMarquee() {
@@ -31,8 +31,8 @@ export function IntegrationsMarquee() {
         ))}
       </div>
       <p className="mx-auto mt-6 max-w-2xl px-6 text-center text-sm text-neutral-500">
-        VetComply connects to PIMS, controlled substance loggers, HR systems, and
-        deal rooms — one registry across your entire portfolio.
+        VetComply ingests rosters from deal rooms, HR systems, and PIMS exports —
+        and exposes resolution via REST API and MCP for your agents.
       </p>
     </div>
   );

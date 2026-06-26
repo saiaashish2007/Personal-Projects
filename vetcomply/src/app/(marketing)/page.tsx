@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck } from "lucide-react";
-import { AgentShowcase } from "@/components/marketing/agent-showcase";
 import { ComparisonTable } from "@/components/marketing/comparison-table";
-import { DiligenceShowcase } from "@/components/marketing/diligence-showcase";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { IntegrationsMarquee } from "@/components/marketing/integrations-marquee";
-import { PortfolioDashboardShowcase } from "@/components/marketing/portfolio-dashboard-showcase";
-import { RenewalShowcase } from "@/components/marketing/renewal-showcase";
-import { organization } from "@/lib/mock-data";
+import { McpDevelopersShowcase } from "@/components/marketing/mcp-developers-showcase";
+import { ResolveConsoleShowcase } from "@/components/marketing/resolve-console-showcase";
+import { ReviewQueueShowcase } from "@/components/marketing/review-queue-showcase";
+import { RosterResolveShowcase } from "@/components/marketing/roster-resolve-showcase";
 
 export const metadata: Metadata = {
-  title: "VetComply — Compliance OS for Veterinary Roll-ups",
+  title: "VetComply — Regulatory Entity Resolution for Veterinary Roll-ups",
   description:
-    "Agents that track DEA registrations, state licenses, controlled substances, and M&A diligence across your entire veterinary portfolio.",
+    "Agent-native API and MCP tools that resolve messy post-acquisition rosters into canonical vet provider and clinic identities — with human review for edge cases.",
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -62,17 +61,17 @@ export default function HomePage() {
       <section className="border-b border-neutral-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 md:pb-24 md:pt-28">
           <p className="text-sm font-medium text-neutral-500">
-            Compliance OS for veterinary roll-ups
+            Regulatory entity resolution for veterinary roll-ups
           </p>
           <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-[1.08] tracking-tight text-neutral-900 md:text-6xl lg:text-7xl">
-            Roll-up compliance,
+            Messy rosters in.
             <br />
-            on <em className="font-serif italic">autopilot</em>.
+            <em className="font-serif italic">Canonical entities</em> out.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-neutral-500 md:text-xl">
-            Agents that track DEA registrations, state licenses, controlled
-            substances, and M&A diligence — then pre-fill the forms your
-            compliance team actually files.
+            VetComply resolves post-acquisition provider and clinic records into
+            structured regulatory identities — via API, MCP tools for your agents,
+            and a review console for the edge cases.
           </p>
           <div className="mt-10">
             <Link
@@ -85,7 +84,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-14 md:mt-20">
-            <PortfolioDashboardShowcase />
+            <ResolveConsoleShowcase />
           </div>
         </div>
       </section>
@@ -96,45 +95,45 @@ export default function HomePage() {
           <div className="max-w-2xl">
             <SectionLabel>Platform</SectionLabel>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900 md:text-4xl">
-              Monitor every clinic in minutes,
+              The resolution layer your
               <br className="hidden sm:block" />
-              not weeks.
+              acquisition pipeline needs.
             </h2>
           </div>
 
           <div className="mt-16 space-y-24 md:mt-20 md:space-y-32">
             <FeatureBlock
-              label="Portfolio command center"
-              title="One view across your entire roll-up."
-              description={`${organization.locationCount} locations across ${organization.statesActive} states — DEA status, state licenses, controlled substance logs, and integration progress in a single dashboard. No more regional spreadsheets.`}
+              label="Roster jobs"
+              title="Upload messy data. Get structured entities."
+              description="Ingest CSV or Excel from your deal room, seller export, or HR system. VetComply resolves providers and clinics, auto-links high-confidence matches, and routes uncertain rows to human review."
             >
-              <PortfolioDashboardShowcase />
+              <RosterResolveShowcase />
             </FeatureBlock>
 
             <FeatureBlock
-              label="Compliance Agent"
-              title="Pre-fills regulatory forms from your registry."
-              description="The Compliance Agent reads your location registry, credentialing data, and CS logs — then pre-fills DEA Form 224a, biennial inventory, Form 106, and ownership change notifications. Your team reviews, then submits."
+              label="Review queue"
+              title="Human stewardship for regulated identities."
+              description="Low-confidence matches land in a review queue with field-level explanations — name similarity, clinic variants, DEA exact matches. Your team confirms or rejects before entities are linked."
               reverse
             >
-              <AgentShowcase />
+              <ReviewQueueShowcase />
             </FeatureBlock>
 
             <FeatureBlock
-              label="M&A diligence"
-              title="Exceptions that explain themselves."
-              description="Every diligence finding is grounded in source evidence — expired DEA registrations, missing biennial inventories, license transfer risks — with risk scores and remediation estimates your deal team can act on before close."
+              label="Agent-native"
+              title="MCP tools your agents actually call."
+              description="resolve_provider, resolve_roster, explain_match, and more — exposed as MCP tools and REST endpoints. Connect from Cursor, Claude Desktop, or your internal acquisition automation."
             >
-              <DiligenceShowcase />
+              <McpDevelopersShowcase />
             </FeatureBlock>
 
             <FeatureBlock
-              label="Renewal calendar"
-              title="Never miss a DEA or license deadline."
-              description="Centralized renewal tracking across every location. Alerts fire before registrations expire — so your team renews proactively instead of discovering expired DEAs during an audit."
+              label="Entity graph"
+              title="Canonical providers and clinics, linked."
+              description="Every resolved entity carries DEA numbers, state licenses, acquisition provenance, and links between providers and clinics — the structured graph your compliance systems and agents reason over."
               reverse
             >
-              <RenewalShowcase />
+              <ResolveConsoleShowcase />
             </FeatureBlock>
           </div>
         </div>
@@ -148,30 +147,30 @@ export default function HomePage() {
           <div className="max-w-2xl">
             <SectionLabel>Security</SectionLabel>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900 md:text-4xl">
-              Roll-up grade security.
+              Built for regulated data.
             </h2>
           </div>
 
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {[
               {
-                title: "Read-only by default",
+                title: "Human in the loop",
                 detail:
-                  "Integrations use read-only credentials. Write access to systems of record requires explicit approval per engagement.",
+                  "Auto-match only above your confidence threshold. Every merge below that requires explicit human approval in the review queue.",
                 rows: [
-                  ["Access", "Read-only by default"],
-                  ["Writes", "Scoped approval required"],
-                  ["Logging", "Recorded per location"],
+                  ["Auto-match", "Configurable threshold"],
+                  ["Review", "Field-level explain"],
+                  ["Override", "Reject or rematch"],
                 ],
               },
               {
-                title: "Human in the loop",
+                title: "Auditable by design",
                 detail:
-                  "Forms finalize only after compliance manager sign-off. Every revision stays in the audit trail.",
+                  "Every API and MCP call logged with request IDs. Match decisions, approvals, and entity links exportable for diligence files.",
                 rows: [
-                  ["Approvals", "Role-gated by reviewer"],
-                  ["Override", "Editable by compliance lead"],
-                  ["Trail", "Logged with evidence"],
+                  ["Logs", "Per request ID"],
+                  ["Retention", "7+ years available"],
+                  ["Export", "JSON + CSV"],
                 ],
               },
               {
@@ -216,7 +215,7 @@ export default function HomePage() {
           <div className="max-w-2xl">
             <SectionLabel>Why VetComply</SectionLabel>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900 md:text-4xl">
-              A smarter way to run roll-up compliance.
+              Resolution infrastructure, not another dashboard.
             </h2>
           </div>
           <div className="mt-14">
@@ -244,12 +243,12 @@ export default function HomePage() {
       <section id="contact" className="scroll-mt-16 bg-neutral-950 py-20 text-white md:py-28">
         <div className="mx-auto max-w-6xl px-6 text-center">
           <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Stop chasing renewals.
+            Stop cleaning rosters by hand.
             <br />
-            Start running compliance at scale.
+            Start resolving at scale.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-neutral-400">
-            Talk to our team about VetComply for your veterinary platform.
+            Talk to our team about VetComply for your acquisition pipeline.
           </p>
           <a
             href="mailto:hello@vetcomply.com"

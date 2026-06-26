@@ -12,7 +12,7 @@ export function MarketingFooter() {
               <span className="text-base font-semibold text-neutral-900">VetComply</span>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-neutral-500">
-              The compliance operating system for PE-backed veterinary roll-ups.
+              Regulatory entity resolution for veterinary roll-ups — API, MCP, and review console.
             </p>
           </div>
 

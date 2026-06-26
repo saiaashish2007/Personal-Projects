@@ -1,6 +1,6 @@
 # VetComply
 
-**Compliance OS for PE-backed veterinary roll-ups** — company website + interactive demo for VC pitches. Tracks DEA registrations, state licenses, controlled substance compliance, M&A diligence, and a **Compliance Agent** that pre-fills regulatory forms.
+**Regulatory entity resolution for PE-backed veterinary roll-ups** — marketing site + interactive demo. Resolves messy post-acquisition rosters into canonical provider and clinic identities via API, MCP tools, and a human review console.
 
 ## Run locally
 
@@ -14,41 +14,30 @@ Open [http://localhost:3000](http://localhost:3000) for the company website. The
 
 ## Deploy on Vercel (free public link)
 
-This app is a standard Next.js project. Deploy it from GitHub in a few minutes:
-
 1. Push this repo to GitHub.
 2. Go to [vercel.com/new](https://vercel.com/new) and import your repository.
-3. Set **Root Directory** to `vetcomply` (the app lives in a subfolder of the repo).
-4. Framework preset should auto-detect **Next.js** — leave build command as `npm run build` and output as default.
+3. Set **Root Directory** to `vetcomply`.
+4. Framework preset should auto-detect **Next.js**.
 5. Click **Deploy**.
 
-Vercel will give you a URL like `https://vetcomply-xxx.vercel.app` for the company site. Share `/demo` for the interactive product walkthrough. Every push to `main` redeploys automatically.
-
-### CLI deploy (optional)
-
-```bash
-cd vetcomply
-npx vercel
-```
-
-Follow the prompts. Use the same root directory if deploying from the monorepo root.
+Share `/demo` for the interactive product walkthrough.
 
 ## Site structure
 
 | Route | What it shows |
 |-------|----------------|
-| **/** | Company website — who we are, platform overview, contact |
-| **/demo** | Interactive demo — portfolio health, Compliance Agent, alerts |
-| **/demo/locations** | Per-clinic DEA, license, CS log status |
-| **/demo/acquisitions** | M&A diligence findings + checklists |
-| **/demo/licenses** | Renewal calendar |
-| **/demo/alerts** | Expired DEAs, renewal deadlines |
+| **/** | Company website — entity resolution platform, API/MCP, contact |
+| **/demo** | Console overview — resolution health, active jobs |
+| **/demo/roster-jobs** | Upload CSV, track resolve progress (interactive) |
+| **/demo/review** | Review queue — confirm/reject matches with explain (interactive) |
+| **/demo/entities** | Entity explorer — browse canonical providers & clinics |
+| **/demo/developers** | API keys, MCP config, request logs |
 
 ## Pitch framing
 
-- **Buyer:** Platform ops, compliance, and integration teams at vet roll-ups
-- **Wedge:** Roll-up-level compliance OS (not per-clinic PIMS like VetSnap)
-- **v2 differentiator:** Compliance Agent pre-fills DEA Form 224a, biennial inventory, Form 106, ownership changes, M&A diligence packets
+- **Buyer:** Platform ops, M&A integration, and engineering teams at vet roll-ups
+- **Product:** Regulatory entity resolution API + MCP — not a compliance dashboard or CS logbook
+- **Wedge:** Fuzzy resolve post-acquisition rosters with human review + agent-native tools
 
 ## Project structure
 
@@ -58,8 +47,10 @@ vetcomply/
 │   ├── app/
 │   │   ├── (marketing)/    # Company website (/)
 │   │   └── (dashboard)/    # Interactive demo (/demo/*)
-│   ├── components/         # UI components (sidebar, compliance agent, etc.)
-│   └── lib/                # Mock data, form definitions, utilities
+│   ├── components/
+│   │   ├── demo/           # Interactive demo panels
+│   │   └── marketing/      # Landing page sections
+│   └── lib/                # Mock resolution data, types, utilities
 ├── package.json
 └── next.config.ts
 ```

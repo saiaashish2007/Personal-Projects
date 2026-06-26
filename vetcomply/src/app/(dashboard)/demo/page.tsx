@@ -1,171 +1,156 @@
 import Link from "next/link";
-import { ComplianceAgent } from "@/components/compliance-agent";
+import { ArrowRight } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
-import { TargetFormsBanner } from "@/components/target-forms-banner";
-import { SeverityBadge, StatusBadge } from "@/components/status-badge";
-import { alerts, clinics, metrics, acquisitions } from "@/lib/mock-data";
-import { formatDate } from "@/lib/utils";
+import { metrics, organization, rosterJobs } from "@/lib/resolve-data";
 
-export default function OverviewPage() {
-  const criticalAlerts = alerts.filter((a) => a.severity === "critical");
-  const atRiskClinics = clinics.filter(
-    (c) =>
-      c.deaStatus !== "compliant" ||
-      c.stateLicenseStatus !== "compliant" ||
-      c.csLogStatus !== "compliant",
+export default function DemoOverviewPage() {
+  const activeJobs = rosterJobs.filter(
+    (j) => j.status === "processing" || j.status === "queued",
   );
 
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-lg font-semibold text-slate-900">Portfolio health</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Resolution health</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Single source of truth for DEA registrations, state licenses, and
-          controlled substance compliance across all locations.
+          Entity resolution across acquisition rosters and onboarding batches for{" "}
+          {organization.name}.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Compliant locations"
-            value={metrics.compliantLocations}
-            hint={`of ${metrics.compliantLocations + metrics.atRiskLocations} active`}
+            label="Resolve calls (7d)"
+            value={metrics.resolveCallsThisWeek.toLocaleString()}
+            hint="API + MCP"
+          />
+          <StatCard
+            label="Auto-match rate"
+            value={`${metrics.autoMatchRate}%`}
+            hint="Above 0.92 threshold"
             variant="success"
           />
           <StatCard
-            label="At-risk locations"
-            value={metrics.atRiskLocations}
-            hint="Renewal or log gaps"
+            label="Pending review"
+            value={metrics.pendingReviews}
+            hint="Low-confidence matches"
             variant="warning"
           />
           <StatCard
-            label="Expired items"
-            value={metrics.expiredItems}
-            hint="DEA, licenses, or logs"
-            variant="danger"
-          />
-          <StatCard
-            label="Renewals due (30d)"
-            value={metrics.renewalsDue30Days}
-            hint="Across all states"
+            label="Canonical entities"
+            value={metrics.canonicalEntities.toLocaleString()}
+            hint={`Avg confidence ${(metrics.avgConfidence * 100).toFixed(0)}%`}
           />
         </div>
       </section>
 
-      <TargetFormsBanner />
-
-      <section id="compliance-agent">
-        <ComplianceAgent />
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h3 className="font-semibold text-slate-900">Critical alerts</h3>
-            <Link href="/demo/alerts" className="text-sm font-medium text-teal-600 hover:text-teal-700">
-              View all
-            </Link>
-          </div>
-          <ul className="divide-y divide-slate-100">
-            {criticalAlerts.map((alert) => (
-              <li key={alert.id} className="px-5 py-4">
-                <div className="flex items-start gap-3">
-                  <SeverityBadge severity={alert.severity} />
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{alert.title}</p>
-                    <p className="mt-1 text-sm text-slate-500">{alert.detail}</p>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h3 className="font-semibold text-slate-900">Acquisition pipeline</h3>
-            <Link
-              href="/demo/acquisitions"
-              className="text-sm font-medium text-teal-600 hover:text-teal-700"
-            >
-              View diligence
-            </Link>
-          </div>
-          <ul className="divide-y divide-slate-100">
-            {acquisitions.map((deal) => (
-              <li key={deal.id} className="px-5 py-4">
+      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h3 className="font-semibold text-slate-900">Active roster jobs</h3>
+          <Link
+            href="/demo/roster-jobs"
+            className="text-sm font-medium text-teal-600 hover:text-teal-700"
+          >
+            Upload roster
+          </Link>
+        </div>
+        <ul className="divide-y divide-slate-100">
+          {rosterJobs.slice(0, 3).map((job) => {
+            const pct = Math.round((job.resolvedRecords / job.totalRecords) * 100);
+            return (
+              <li key={job.id} className="px-5 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{deal.targetName}</p>
+                    <p className="text-sm font-medium text-slate-900">{job.name}</p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {deal.locations} clinics · Close {formatDate(deal.closeDate)} ·{" "}
-                      <span className="capitalize">{deal.stage}</span>
+                      {job.resolvedRecords} / {job.totalRecords} resolved · {job.reviewCount}{" "}
+                      need review
                     </p>
                   </div>
                   <span
                     className={
-                      deal.riskScore >= 60
-                        ? "text-sm font-semibold text-red-600"
-                        : deal.riskScore >= 40
-                          ? "text-sm font-semibold text-amber-600"
-                          : "text-sm font-semibold text-emerald-600"
+                      job.status === "completed"
+                        ? "text-sm font-semibold text-emerald-600"
+                        : "text-sm font-semibold text-blue-600"
                     }
                   >
-                    Risk {deal.riskScore}
+                    {pct}%
                   </span>
                 </div>
               </li>
-            ))}
-          </ul>
-          <div className="border-t border-slate-100 px-5 py-3 text-sm text-slate-500">
-            Avg. integration timeline: {metrics.avgIntegrationDays} days
-          </div>
-        </section>
+            );
+          })}
+        </ul>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Link
+          href="/demo/review"
+          className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50/30"
+        >
+          <h3 className="font-semibold text-slate-900">Review queue</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            {metrics.pendingReviews} low-confidence matches waiting for human approval.
+            Confirm or reject with field-level explanations.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-600 group-hover:gap-2 transition-all">
+            Open queue
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
+
+        <Link
+          href="/demo/entities"
+          className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50/30"
+        >
+          <h3 className="font-semibold text-slate-900">Entity explorer</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Browse {metrics.canonicalEntities.toLocaleString()} canonical providers and clinics
+            with linked DEA, licenses, and acquisition sources.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-600 group-hover:gap-2 transition-all">
+            Browse entities
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
+
+        <Link
+          href="/demo/roster-jobs"
+          className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50/30"
+        >
+          <h3 className="font-semibold text-slate-900">Roster jobs</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Upload acquisition CSVs, track resolve progress, and download structured entity
+            output.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-600 group-hover:gap-2 transition-all">
+            Manage jobs
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
+
+        <Link
+          href="/demo/developers"
+          className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50/30"
+        >
+          <h3 className="font-semibold text-slate-900">Developers</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            API keys, MCP configuration for Cursor/Claude, and auditable request logs.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-600 group-hover:gap-2 transition-all">
+            API & MCP
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="font-semibold text-slate-900">Locations needing attention</h3>
-          <Link
-            href="/demo/locations"
-            className="text-sm font-medium text-teal-600 hover:text-teal-700"
-          >
-            All locations
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-5 py-3 font-medium">Clinic</th>
-                <th className="px-5 py-3 font-medium">State</th>
-                <th className="px-5 py-3 font-medium">DEA</th>
-                <th className="px-5 py-3 font-medium">State license</th>
-                <th className="px-5 py-3 font-medium">CS logs</th>
-                <th className="px-5 py-3 font-medium">Integration</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {atRiskClinics.map((clinic) => (
-                <tr key={clinic.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-slate-900">{clinic.name}</td>
-                  <td className="px-5 py-3 text-slate-600">{clinic.state}</td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={clinic.deaStatus} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={clinic.stateLicenseStatus} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={clinic.csLogStatus} />
-                  </td>
-                  <td className="px-5 py-3 capitalize text-slate-600">
-                    {clinic.integrationStatus.replace("_", " ")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {activeJobs.length > 0 && (
+        <p className="text-sm text-blue-600">
+          {activeJobs.length} job processing — Heritage Animal Clinics at{" "}
+          {Math.round(
+            (activeJobs[0].resolvedRecords / activeJobs[0].totalRecords) * 100,
+          )}
+          %
+        </p>
+      )}
     </div>
   );
 }

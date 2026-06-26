@@ -40,6 +40,12 @@ export function MarketingHeader() {
           >
             Contact
           </a>
+          <Link
+            href="/demo"
+            className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            View demo
+          </Link>
         </nav>
 
         <button
@@ -71,6 +77,13 @@ export function MarketingHeader() {
               </a>
             ),
           )}
+          <Link
+            href="/demo"
+            className="text-sm font-medium text-neutral-900"
+            onClick={() => setMobileOpen(false)}
+          >
+            View demo
+          </Link>
         </nav>
       </div>
     </header>

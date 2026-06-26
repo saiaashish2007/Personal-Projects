@@ -6,28 +6,28 @@ import { cn } from "@/lib/utils";
 
 const faqs = [
   {
-    q: "How does VetComply connect to our clinic systems?",
-    a: "VetComply integrates with PIMS platforms (ezyVet, IDEXX Neo, Cornerstone), controlled substance loggers like VetSnap, and HR/credentialing systems. During M&A, it ingests seller documentation from your deal room and cross-checks against DEA and state board records.",
+    q: "Is VetComply an AI agent that runs our compliance program?",
+    a: "No. VetComply is regulatory entity resolution infrastructure — API and MCP tools that turn messy acquisition rosters into canonical provider and clinic identities. Your agents and ops team call VetComply; we don't replace your compliance workflow.",
   },
   {
-    q: "Is this a replacement for VetSnap or clinic PIMS?",
-    a: "No. VetComply sits above your clinic systems — the portfolio-level compliance layer. VetSnap handles per-clinic CS logging; VetComply gives platform ops a single view across 50, 100, or 500+ locations.",
+    q: "How does VetComply differ from license verification APIs?",
+    a: "Verification APIs like The Vet Registry or MedPro look up known identifiers. VetComply resolves messy, incomplete records — fuzzy names, missing DEA numbers, clinic variants — and returns canonical entities with confidence scores and field-level explanations.",
   },
   {
-    q: "What forms does the Compliance Agent pre-fill?",
-    a: "DEA Form 224a (registration renewal), biennial controlled substance inventory (21 CFR §1304.11), DEA Form 106 (theft/loss), ownership change notifications, and M&A diligence packets. Every field is sourced from your registry with human review before submission.",
+    q: "Do you replace VetSnap or clinic PIMS?",
+    a: "No. VetSnap handles per-clinic controlled substance logging. VetComply sits upstream of compliance workflows — cleaning the entity graph after acquisitions so your systems and agents know who is who.",
+  },
+  {
+    q: "What is the MCP integration for?",
+    a: "MCP (Model Context Protocol) lets AI agents in Cursor, Claude Desktop, or your internal tools call VetComply directly — resolve_provider, resolve_roster, explain_match, and more — with auditable request logs.",
+  },
+  {
+    q: "What happens to low-confidence matches?",
+    a: "Matches below your confidence threshold go to a human review queue in the VetComply console. Your team confirms or rejects with full field-level breakdowns before entities are linked.",
   },
   {
     q: "Who is VetComply built for?",
-    a: "PE-backed veterinary roll-ups with platform ops, central compliance, and M&A integration teams. If you're managing compliance across dozens of acquisitions per year, VetComply is the operating system those teams need.",
-  },
-  {
-    q: "How is VetComply different from a compliance consultant?",
-    a: "Consultants are thorough but slow and expensive. VetComply automates evidence gathering, renewal tracking, diligence checklists, and form pre-fill — so your team spends time on judgment calls, not spreadsheet maintenance.",
-  },
-  {
-    q: "Can we use VetComply during acquisitions?",
-    a: "Yes. VetComply generates diligence packets that flag expired DEAs, missing biennial inventories, and license transfer risks before close — with risk scores and remediation estimates your deal team can act on.",
+    a: "PE-backed veterinary roll-ups with platform ops, M&A integration, and engineering teams building acquisition pipelines. If you ingest provider rosters after every deal, VetComply is the resolution layer those pipelines need.",
   },
 ];
 

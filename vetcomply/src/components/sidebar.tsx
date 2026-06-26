@@ -3,22 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  AlertTriangle,
   Building2,
   ClipboardList,
-  FileCheck2,
+  Code2,
   LayoutDashboard,
   Shield,
+  UserCheck,
 } from "lucide-react";
-import { organization } from "@/lib/mock-data";
+import { organization } from "@/lib/resolve-data";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/demo", label: "Overview", icon: LayoutDashboard },
-  { href: "/demo/locations", label: "Locations", icon: Building2 },
-  { href: "/demo/acquisitions", label: "Acquisitions", icon: ClipboardList },
-  { href: "/demo/licenses", label: "Licenses & DEA", icon: FileCheck2 },
-  { href: "/demo/alerts", label: "Alerts", icon: AlertTriangle },
+  { href: "/demo/roster-jobs", label: "Roster jobs", icon: ClipboardList },
+  { href: "/demo/review", label: "Review queue", icon: UserCheck },
+  { href: "/demo/entities", label: "Entities", icon: Building2 },
+  { href: "/demo/developers", label: "Developers", icon: Code2 },
 ];
 
 export function Sidebar() {
@@ -33,7 +33,7 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm font-semibold tracking-tight">VetComply</p>
-            <p className="text-xs text-slate-400">Compliance OS</p>
+            <p className="text-xs text-slate-400">Entity resolution</p>
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function Sidebar() {
         </p>
         <p className="mt-1 text-sm font-medium">{organization.name}</p>
         <p className="text-xs text-slate-400">
-          {organization.locationCount} locations · {organization.statesActive} states
+          {organization.apiCallsThisWeek.toLocaleString()} API calls this week
         </p>
       </div>
 
@@ -66,6 +66,11 @@ export function Sidebar() {
             >
               <Icon className="h-4 w-4" />
               {label}
+              {label === "Review queue" && organization.pendingReviews > 0 && (
+                <span className="ml-auto rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  {organization.pendingReviews}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -79,7 +84,7 @@ export function Sidebar() {
           ← Back to website
         </Link>
         <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          Demo mode — mock data for VC pitch
+          Demo mode — interactive mock resolution engine
         </p>
       </div>
     </aside>

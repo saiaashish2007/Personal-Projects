@@ -7,10 +7,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-b border-slate-200 bg-white px-8 py-5">
           <p className="text-xs font-medium uppercase tracking-wider text-teal-600">
-            Veterinary roll-up compliance
+            Veterinary regulatory entity resolution
           </p>
           <h1 className="mt-1 text-xl font-semibold text-slate-900">
-            Platform compliance command center
+            VetComply console
           </h1>
         </header>
         <main className="flex-1 overflow-auto p-8">{children}</main>
