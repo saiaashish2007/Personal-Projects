@@ -1,0 +1,23 @@
+# Raw DERA archives and the full transaction table are regenerable from
+# scripts/01_ingest.py in ~4 minutes, and the table exceeds GitHub's 100 MB file
+# limit. Only the smaller derived artifacts under artifacts/ are committed.
+data/raw/
+data/processed/insider_trades.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Node / Next.js
+web/node_modules/
+web/.next/
+web/out/
+web/.vercel/
+
+# OS
+.DS_Store
