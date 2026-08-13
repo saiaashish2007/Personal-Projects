@@ -22,8 +22,9 @@ web/next-env.d.ts
 web/tsconfig.tsbuildinfo
 
 # Local copy of artifacts/ for build hosts that cannot read above the project root.
-# The committed source of truth is artifacts/ at the repo root — see web/README.md.
-web/artifacts/
+# JSON files are committed so Vercel can build without "include files outside root".
+# Keep schema/ and generated junk out.
+web/artifacts/schema/
 
 # OS
 .DS_Store

@@ -1,0 +1,453 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "robustness",
+  "generated_at": "2026-08-13T16:42:23Z",
+  "data_status": "real",
+  "notes": "SPEC \u00a712 battery on the decay study. Grid families are the closed enum. The W\u00d7\u03bb metric is 21-day mean IC. Randomization shuffles S within date. Buys-only is the core; a net (buys\u2212sales) variant was not built.",
+  "baseline_id": "baseline",
+  "grid": [
+    {
+      "id": "baseline",
+      "family": "headline",
+      "label": "Baseline: opportunistic, ETF hedge, 3-month hold",
+      "description": "Primary variant opp_etf_3m, net of the explicit cost model, full 2014\u20132025 sample. This is the SPEC default, not a selected Sharpe.",
+      "n_months": 144,
+      "ann_return": -0.06291641170363815,
+      "sharpe": -0.40991424192657816,
+      "sharpe_ci_low": -1.0490359637620696,
+      "sharpe_ci_high": 0.18033127847492786,
+      "alpha_ann_bps": -340.8029047933105,
+      "alpha_t_stat": -0.8446196496086755,
+      "delta_alpha_vs_baseline_bps": null
+    },
+    {
+      "id": "sub_2014_2019",
+      "family": "subperiod",
+      "label": "2014\u20132019",
+      "description": "First half of the sample, including the 2014\u20132019 expansion.",
+      "n_months": 72,
+      "ann_return": 0.014212471068715038,
+      "sharpe": 0.11439382965402094,
+      "sharpe_ci_low": -0.6806882879924394,
+      "sharpe_ci_high": 0.8796218850748682,
+      "alpha_ann_bps": 424.20081439849906,
+      "alpha_t_stat": 0.8066425330377546,
+      "delta_alpha_vs_baseline_bps": 765.0037191918095
+    },
+    {
+      "id": "sub_2020_2025",
+      "family": "subperiod",
+      "label": "2020\u20132025",
+      "description": "Second half, including COVID, the 2022 drawdown, and the rebound.",
+      "n_months": 72,
+      "ann_return": -0.1341797931856722,
+      "sharpe": -0.8599122717195031,
+      "sharpe_ci_low": -1.855024166557625,
+      "sharpe_ci_high": -0.10920331854510267,
+      "alpha_ann_bps": -1186.797231746384,
+      "alpha_t_stat": -2.5167178529065963,
+      "delta_alpha_vs_baseline_bps": -845.9943269530736
+    },
+    {
+      "id": "ex_covid",
+      "family": "event_exclusion",
+      "label": "Excluding 2020 Q1\u2013Q2",
+      "description": "Drops the COVID crash and the immediate rebound (January\u2013June 2020).",
+      "n_months": 138,
+      "ann_return": -0.06283664134111022,
+      "sharpe": -0.433568226722117,
+      "sharpe_ci_low": -1.1374848149461998,
+      "sharpe_ci_high": 0.20562556178108227,
+      "alpha_ann_bps": -287.75702590608114,
+      "alpha_t_stat": -0.6977457505855729,
+      "delta_alpha_vs_baseline_bps": 53.04587888722938
+    },
+    {
+      "id": "all_insiders",
+      "family": "signal_definition",
+      "label": "All insiders (CMP filter off)",
+      "description": "Identical ETF-hedged 3-month construction on every open-market purchase. Buys-only is already the core; a net (buys\u2212sales) variant was not built and is not invented here.",
+      "n_months": 144,
+      "ann_return": -0.028761020461802733,
+      "sharpe": -0.28340526396002175,
+      "sharpe_ci_low": -0.830225286920892,
+      "sharpe_ci_high": 0.2524859211679612,
+      "alpha_ann_bps": -101.62285266362305,
+      "alpha_t_stat": -0.4298386263712285,
+      "delta_alpha_vs_baseline_bps": 239.18005212968745
+    },
+    {
+      "id": "cap_small",
+      "family": "cap_tercile",
+      "label": "Small-cap tercile",
+      "description": "Long book restricted to the bottom third of the universe by market cap at t. CMP predicts a stronger effect here.",
+      "n_months": 144,
+      "ann_return": -0.05969589581051726,
+      "sharpe": -0.1789212195226612,
+      "sharpe_ci_low": -0.8186832339703825,
+      "sharpe_ci_high": 0.4282921077641336,
+      "alpha_ann_bps": -73.8561394050557,
+      "alpha_t_stat": -0.11657799857318998,
+      "delta_alpha_vs_baseline_bps": 266.9467653882548
+    },
+    {
+      "id": "cap_mid",
+      "family": "cap_tercile",
+      "label": "Mid-cap tercile",
+      "description": "Long book restricted to the middle third by market cap at t.",
+      "n_months": 144,
+      "ann_return": -0.14263591047198487,
+      "sharpe": -0.8382188708294183,
+      "sharpe_ci_low": -1.4815439712055563,
+      "sharpe_ci_high": -0.24232816756726014,
+      "alpha_ann_bps": -1259.006567399385,
+      "alpha_t_stat": -2.475793652645174,
+      "delta_alpha_vs_baseline_bps": -918.2036626060744
+    },
+    {
+      "id": "cap_large",
+      "family": "cap_tercile",
+      "label": "Large-cap tercile",
+      "description": "Long book restricted to the top third by market cap at t.",
+      "n_months": 144,
+      "ann_return": -0.03982355549584371,
+      "sharpe": -0.38286668417007674,
+      "sharpe_ci_low": -0.9678810368456069,
+      "sharpe_ci_high": 0.1767791439501122,
+      "alpha_ann_bps": -474.82459250936296,
+      "alpha_t_stat": -1.2063274953942802,
+      "delta_alpha_vs_baseline_bps": -134.02168771605244
+    },
+    {
+      "id": "ex_financials",
+      "family": "sector_exclusion",
+      "label": "Excluding financials",
+      "description": "Drops SIC division Finance, Insurance, Real Estate \u2014 the largest source of insider-purchase events.",
+      "n_months": 144,
+      "ann_return": -0.06284260238093786,
+      "sharpe": -0.2928374816351515,
+      "sharpe_ci_low": -0.8981496185881872,
+      "sharpe_ci_high": 0.27543897735365835,
+      "alpha_ann_bps": -151.06265241750145,
+      "alpha_t_stat": -0.2881373224288687,
+      "delta_alpha_vs_baseline_bps": 189.74025237580906
+    },
+    {
+      "id": "ex_energy",
+      "family": "sector_exclusion",
+      "label": "Excluding energy",
+      "description": "Drops SIC division Mining, the project's energy bucket (maps to XLE). Energy purchases cluster after drawdowns.",
+      "n_months": 144,
+      "ann_return": -0.06113789917381762,
+      "sharpe": -0.4003251065135518,
+      "sharpe_ci_low": -1.0376965755015972,
+      "sharpe_ci_high": 0.20145577378874616,
+      "alpha_ann_bps": -299.6702418098118,
+      "alpha_t_stat": -0.748117968949969,
+      "delta_alpha_vs_baseline_bps": 41.13266298349873
+    }
+  ],
+  "parameter_sweep": {
+    "metric": "21-day mean Spearman IC",
+    "x_param": "W",
+    "x_label": "Aggregation window (calendar days)",
+    "x_values": [
+      30.0,
+      60.0,
+      90.0,
+      120.0,
+      180.0
+    ],
+    "y_param": "lambda",
+    "y_label": "Cluster amplification \u03bb",
+    "y_values": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "cells": [
+      {
+        "x": 30.0,
+        "y": 0.0,
+        "value": 0.002498507736829742,
+        "t_stat": 0.23347498997916868
+      },
+      {
+        "x": 30.0,
+        "y": 0.25,
+        "value": 0.002446118055260375,
+        "t_stat": 0.22840080130396875
+      },
+      {
+        "x": 30.0,
+        "y": 0.5,
+        "value": 0.0025261727929392296,
+        "t_stat": 0.23610152185020858
+      },
+      {
+        "x": 30.0,
+        "y": 0.75,
+        "value": 0.0023906019912563483,
+        "t_stat": 0.2229812552397957
+      },
+      {
+        "x": 30.0,
+        "y": 1.0,
+        "value": 0.0025269398547137526,
+        "t_stat": 0.23606985795774965
+      },
+      {
+        "x": 60.0,
+        "y": 0.0,
+        "value": 0.009914577013334413,
+        "t_stat": 1.268398826623435
+      },
+      {
+        "x": 60.0,
+        "y": 0.25,
+        "value": 0.010042686526757601,
+        "t_stat": 1.2794249478251745
+      },
+      {
+        "x": 60.0,
+        "y": 0.5,
+        "value": 0.009739216189161395,
+        "t_stat": 1.2388827188987592
+      },
+      {
+        "x": 60.0,
+        "y": 0.75,
+        "value": 0.009898595895840741,
+        "t_stat": 1.2546521913632087
+      },
+      {
+        "x": 60.0,
+        "y": 1.0,
+        "value": 0.009420081599518884,
+        "t_stat": 1.1875523467097857
+      },
+      {
+        "x": 90.0,
+        "y": 0.0,
+        "value": 0.017496337075072064,
+        "t_stat": 2.2911666472037786
+      },
+      {
+        "x": 90.0,
+        "y": 0.25,
+        "value": 0.01596954794932083,
+        "t_stat": 2.07606261669688
+      },
+      {
+        "x": 90.0,
+        "y": 0.5,
+        "value": 0.016522195636807374,
+        "t_stat": 2.1632624910912504
+      },
+      {
+        "x": 90.0,
+        "y": 0.75,
+        "value": 0.01749121400884542,
+        "t_stat": 2.2326187372893096
+      },
+      {
+        "x": 90.0,
+        "y": 1.0,
+        "value": 0.017541280240420683,
+        "t_stat": 2.239627459277737
+      },
+      {
+        "x": 120.0,
+        "y": 0.0,
+        "value": 0.018241536360036382,
+        "t_stat": 2.4879037348426625
+      },
+      {
+        "x": 120.0,
+        "y": 0.25,
+        "value": 0.01713909915683412,
+        "t_stat": 2.320858865053869
+      },
+      {
+        "x": 120.0,
+        "y": 0.5,
+        "value": 0.017701576518244083,
+        "t_stat": 2.3942829441201416
+      },
+      {
+        "x": 120.0,
+        "y": 0.75,
+        "value": 0.018108773114803123,
+        "t_stat": 2.4193245858178902
+      },
+      {
+        "x": 120.0,
+        "y": 1.0,
+        "value": 0.016163586290049627,
+        "t_stat": 2.1372562938769692
+      },
+      {
+        "x": 180.0,
+        "y": 0.0,
+        "value": 0.009392330664670594,
+        "t_stat": 1.335783305762262
+      },
+      {
+        "x": 180.0,
+        "y": 0.25,
+        "value": 0.010611327473412433,
+        "t_stat": 1.5264740289061092
+      },
+      {
+        "x": 180.0,
+        "y": 0.5,
+        "value": 0.010446451357482223,
+        "t_stat": 1.5132047967342988
+      },
+      {
+        "x": 180.0,
+        "y": 0.75,
+        "value": 0.011296077089830835,
+        "t_stat": 1.663210558269266
+      },
+      {
+        "x": 180.0,
+        "y": 1.0,
+        "value": 0.010410498093476836,
+        "t_stat": 1.5373955062505043
+      }
+    ],
+    "assessment": "21-day mean IC ranges from +0.0024 to +0.0182 (10 of 25 cells with |t| \u2265 2). The surface is read as a weak plateau rather than a specification that works; the default cell is +0.0165 (t = 2.16)."
+  },
+  "randomization": {
+    "n_draws": 1000,
+    "statistic": "21-day mean Spearman IC",
+    "observed": 0.016522195636807374,
+    "null_mean": -5.179751345498339e-05,
+    "null_std": 0.0022617498577427162,
+    "percentile": 1.0,
+    "p_value": 0.0,
+    "histogram": [
+      {
+        "bin_center": -0.00726879321699959,
+        "count": 1
+      },
+      {
+        "bin_center": -0.006590102974548489,
+        "count": 2
+      },
+      {
+        "bin_center": -0.0059114127320973875,
+        "count": 2
+      },
+      {
+        "bin_center": -0.005232722489646287,
+        "count": 9
+      },
+      {
+        "bin_center": -0.004554032247195185,
+        "count": 18
+      },
+      {
+        "bin_center": -0.0038753420047440835,
+        "count": 35
+      },
+      {
+        "bin_center": -0.0031966517622929826,
+        "count": 46
+      },
+      {
+        "bin_center": -0.0025179615198418813,
+        "count": 51
+      },
+      {
+        "bin_center": -0.0018392712773907796,
+        "count": 84
+      },
+      {
+        "bin_center": -0.0011605810349396783,
+        "count": 129
+      },
+      {
+        "bin_center": -0.0004818907924885774,
+        "count": 114
+      },
+      {
+        "bin_center": 0.00019679944996252394,
+        "count": 112
+      },
+      {
+        "bin_center": 0.0008754896924136257,
+        "count": 112
+      },
+      {
+        "bin_center": 0.0015541799348647266,
+        "count": 90
+      },
+      {
+        "bin_center": 0.0022328701773158275,
+        "count": 77
+      },
+      {
+        "bin_center": 0.0029115604197669292,
+        "count": 50
+      },
+      {
+        "bin_center": 0.003590250662218031,
+        "count": 24
+      },
+      {
+        "bin_center": 0.004268940904669133,
+        "count": 20
+      },
+      {
+        "bin_center": 0.004947631147120234,
+        "count": 11
+      },
+      {
+        "bin_center": 0.0056263213895713345,
+        "count": 9
+      },
+      {
+        "bin_center": 0.006305011632022437,
+        "count": 4
+      }
+    ]
+  },
+  "bootstrap": [
+    {
+      "statistic": "Net Sharpe ratio",
+      "point_estimate": -0.40991424192657816,
+      "ci_low": -1.0507106877284709,
+      "ci_high": 0.1842543834868954,
+      "ci_level": 0.95,
+      "n_resamples": 2000,
+      "method": "stationary bootstrap, mean block length 6 months"
+    },
+    {
+      "statistic": "Net annualized FF5+UMD alpha (bps)",
+      "point_estimate": -340.8029047933105,
+      "ci_low": -1131.1525819415417,
+      "ci_high": 617.5627700180086,
+      "ci_level": 0.95,
+      "n_resamples": 2000,
+      "method": "stationary bootstrap, mean block length 6 months"
+    },
+    {
+      "statistic": "Mean IC, 21-day horizon",
+      "point_estimate": 0.016522195636807374,
+      "ci_low": 0.0026356102191351254,
+      "ci_high": 0.031667710612114,
+      "ci_level": 0.95,
+      "n_resamples": 2000,
+      "method": "stationary bootstrap, mean block length 6 months"
+    }
+  ],
+  "multiple_testing": {
+    "n_specifications_tested": 51,
+    "deflated_sharpe": -0.6080714816525369,
+    "haircut_note": "51 specifications were actually run and counted: 10 robustness-grid rows, 25 W\u00d7\u03bb cells, 4 backtest variants, and 12 IC horizon\u00d7arm cells. The headline net Sharpe is -0.41. A Harvey\u2013Liu\u2013Zhu expected-max haircut at this N subtracts 0.20 and leaves a deflated Sharpe of -0.61. The raw Sharpe is already negative, so after multiple tests there is nothing left \u2014 not a borderline result that a Bonferroni adjustment might spare, but a hole that gets deeper when you account for the search."
+  }
+}

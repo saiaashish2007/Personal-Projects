@@ -1,0 +1,250 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "limitations",
+  "generated_at": "2026-08-13T16:42:23Z",
+  "data_status": "real",
+  "notes": "Written from the measured artifacts, not from a hoped-for spec. Primary residual alpha -341 bps (t = -0.84); SMB +0.69 (t = 3.71), HML +0.10 (t = 0.72). 2014\u20132019 net Sharpe 0.11, alpha +424 bps (t = 0.81); 2020\u20132025 net Sharpe -0.86, alpha -1187 bps (t = -2.52). Randomization of 21-day IC: observed at the 100.0th percentile of 1000 shuffles. Deflated Sharpe -0.61 after 51 specs. Filter-off residual -102 bps.",
+  "headline_verdict": {
+    "verdict": "signal_decayed",
+    "summary": "Cohen, Malloy & Pomorski does not replicate on 2014\u20132025 at the pre-registered gate. Opportunistic 21-day IC is +0.0165 (t = 2.16) and 63-day IC is +0.0157 (t = 1.54); the CMP filter's lift versus all insider purchases is +0.0027 at 21 days and \u2248 0 at 63. The primary book opp_etf_3m has net Sharpe -0.41, net CAGR -6.3%, max drawdown -66.4%, and no break-even cost \u2014 excess versus RF is -598 bps/year even at 0 bps (t = -1.24). Residual FF5+UMD alpha is -341 bps/year (t = -0.84). This is post-publication decay, not a live edge."
+  },
+  "limitations": [
+    {
+      "id": "survivorship",
+      "title": "Survivorship bias in Yahoo prices",
+      "severity": "high",
+      "category": "Data",
+      "description": "Yahoo serves no history for a delisted ticker. Activision, Twitter, SVB Financial, Cerner and Xilinx were each requested successfully alongside live names of the same size and returned nothing. The 2014 universe is therefore built only from companies that were still listed in 2025: essentially no name stops printing before the sample ends, against the 2\u20134% annual attrition the S&P 1500 actually experiences. Missing names are missing from both legs, so the bias distorts the result to the extent that disappearing correlates with the signal \u2014 and it does, in both directions.",
+      "direction_of_bias": "Ambiguous on the spread: acquisitions at a premium (insiders buy ahead) are missing from the long leg; bankruptcies (insiders were not buying) are missing from the short. Long-only readings are biased upward.",
+      "mitigation": "Disclosed rather than adjusted away. Insider transaction prices and unexplained overnight jumps are used as a second opinion on the names that remain. A CRSP-quality panel would resolve this properly.",
+      "quantification": "Of the realized universe, essentially no name stops printing prices before the sample ends."
+    },
+    {
+      "id": "tenb51_opacity",
+      "title": "10b5-1 opacity pre-2023",
+      "severity": "high",
+      "category": "Measurement",
+      "description": "The Form 4 checkbox identifying pre-scheduled 10b5-1 trades only exists from 2023. For nine of the twelve sample years the routine classifier is a behavioral proxy for scheduled trading, not an observation of it. Precision and recall against the post-2023 flag are 0.55 and 0.73 \u2014 near 0.6, which means the proxy and the checkbox disagree on a large minority of trades.",
+      "direction_of_bias": "Attenuating \u2014 misclassification dilutes the opportunistic bucket",
+      "mitigation": "The checkbox is held out as a validation set the classifier never sees. Agreement is directional (routine trades are more often flagged) and survives collapsing to one observation per insider-year.",
+      "quantification": "Precision 0.55, recall 0.73, accuracy 0.57 on 2023\u20132025 classified trades."
+    },
+    {
+      "id": "sparsity",
+      "title": "Event sparsity",
+      "severity": "high",
+      "category": "Statistics",
+      "description": "Once the opportunistic filter is applied, a median of 46 universe names per month carry a nonzero score (3.3% of the 1,500-name universe). The top quintile is then about 9 names. Cross-sectional breadth is thin and confidence intervals are wide.",
+      "direction_of_bias": null,
+      "mitigation": "Quintiles rather than deciles; overlapping three-month vintages; bootstrap rather than asymptotic intervals on Sharpe and alpha.",
+      "quantification": "Median 46 names with signal; overlapping book averages 18.8 longs. Bootstrap 95% CI on net Sharpe is [-1.05, 0.18]."
+    },
+    {
+      "id": "filing_lag",
+      "title": "Filing lag plus monthly rebalancing",
+      "severity": "medium",
+      "category": "Implementation",
+      "description": "Signals are timestamped by filing date, up to two business days after the insider's fill, and are then only acted on at the next monthly rebalance. Realized entry can be several weeks after the insider transacted.",
+      "direction_of_bias": "Downward \u2014 realistic implementation gives up some of the paper effect",
+      "mitigation": "Intentional. Using transaction date would inject lookahead through late filings.",
+      "quantification": "Median filing lag 1 business days; 83.0% inside the statutory two-business-day window."
+    },
+    {
+      "id": "no_borrow",
+      "title": "No borrow costs or short availability",
+      "severity": "medium",
+      "category": "Implementation",
+      "description": "The quintile-spread variant shorts the bottom quintile with no borrow fee and no availability constraint. Bottom-quintile names skew small and hard to borrow. The primary book shorts synthetic sector portfolios instead, which avoids single-name borrow but is not a live ETF.",
+      "direction_of_bias": "Upward on the quintile-spread variant only",
+      "mitigation": "The beta- and sector-matched ETF hedge is the primary construction precisely because it does not depend on single-name borrow.",
+      "quantification": null
+    },
+    {
+      "id": "post_publication",
+      "title": "Post-publication decay",
+      "severity": "high",
+      "category": "Economics",
+      "description": "The sample is entirely after Cohen, Malloy & Pomorski (2012). The project was designed to report decay cleanly if that is what the data showed. It is. The 82 bps/month opportunistic-buy premium from their 1986\u20132007 sample is not in this one, and the CMP filter's incremental IC is indistinguishable from zero.",
+      "direction_of_bias": null,
+      "mitigation": "Pre-registered go/no-go on 21- and 63-day IC. No parameter was retuned after the gate failed.",
+      "quantification": "Gate failed at 63d (t = 1.54). Primary net Sharpe -0.41; residual alpha -341 bps/year."
+    },
+    {
+      "id": "name_sector_caps",
+      "title": "Name and sector cap relaxation",
+      "severity": "medium",
+      "category": "Implementation",
+      "description": "A 3% per-name cap needs 34 names to fill a 100% long book; a 25% sector cap needs the book to span at least four SIC divisions. The opportunistic top quintile is about 9 names and often clustered in one division. Caps are applied when they are feasible and otherwise relax to the minimum that still fully invests. That is a spec tension forced by sparsity, not a tuned parameter.",
+      "direction_of_bias": "Concentration \u2014 the realized book is less diversified than the SPEC caps describe",
+      "mitigation": "Recorded in SPEC \u00a79.1 and in the backtest notes. Not retuned.",
+      "quantification": "Median ~9 names in the top quintile; overlapping book averages 18.8 longs after three vintages."
+    },
+    {
+      "id": "etf_hedge",
+      "title": "ETF hedge approximated by SIC-division portfolios",
+      "severity": "medium",
+      "category": "Implementation",
+      "description": "The price panel does not carry the XL* SPDR sector ETFs. Hedge returns are cap-weighted SIC-division portfolios from the universe, standing in for the SPDR implied by the SIC \u2192 XL* map. SPY (which the panel does carry) is used for trailing 60-day betas. The short is sector-matched dollar-for-dollar, then scaled by the long book's weighted SPY-beta.",
+      "direction_of_bias": "Unclear \u2014 synthetic sector portfolios are not the live XL* products and inherit the same survivorship hole as the long book",
+      "mitigation": "Documented in SPEC \u00a79.1. A panel that includes XL* prices would replace the approximation.",
+      "quantification": null
+    }
+  ],
+  "what_did_not_work": [
+    {
+      "id": "cmp_filter",
+      "title": "The CMP routine/opportunistic filter is not an alpha source",
+      "hypothesis": "Restricting to opportunistic insiders should raise the information coefficient relative to all open-market purchases, as in Cohen, Malloy & Pomorski (2012).",
+      "what_we_did": "Built the firm-level score twice \u2014 once with the point-in-time CMP filter and once without \u2014 and compared Spearman ICs at every horizon and the two ETF-hedged 3-month books.",
+      "what_happened": "The filter's lift is indistinguishable from zero at every horizon that matters. In portfolio space the filter-off twin is less bad, not better.",
+      "evidence": [
+        {
+          "label": "\u0394 IC, 21-day",
+          "value": "+0.0027",
+          "t_stat": 0.30034708734027904
+        },
+        {
+          "label": "\u0394 IC, 63-day",
+          "value": "+0.0000",
+          "t_stat": -0.006135161478864314
+        },
+        {
+          "label": "opp_etf_3m net Sharpe",
+          "value": "-0.41",
+          "t_stat": null
+        },
+        {
+          "label": "all_etf_3m net Sharpe",
+          "value": "-0.28",
+          "t_stat": null
+        }
+      ],
+      "takeaway": "The split still agrees with the 10b5-1 checkbox in the predicted direction. It does not, on this sample, separate informative purchases from uninformative ones."
+    },
+    {
+      "id": "tradable_book",
+      "title": "The tradable long/short book loses money after costs \u2014 and before them",
+      "hypothesis": "A faint positive IC would survive portfolio construction as a positive-Sharpe, positive-alpha book once hedged and costed.",
+      "what_we_did": "SPEC-default overlapping 3-month book, sector-ETF hedge, explicit round-trip cost of ~16 bps, plus a 0\u2013100 bp flat-cost sweep.",
+      "what_happened": "Net Sharpe -0.41, net CAGR -6.3%, max drawdown -66.4%, turnover 5.42\u00d7. Excess versus RF is negative at 0 bps of cost. There is no break-even.",
+      "evidence": [
+        {
+          "label": "Net Sharpe",
+          "value": "-0.41",
+          "t_stat": null
+        },
+        {
+          "label": "Net CAGR",
+          "value": "-6.3%",
+          "t_stat": null
+        },
+        {
+          "label": "Excess vs RF at 0 bps",
+          "value": "-598 bps/year",
+          "t_stat": -1.2444644683196882
+        },
+        {
+          "label": "Break-even cost",
+          "value": "none",
+          "t_stat": null
+        },
+        {
+          "label": "FF5+UMD alpha (net)",
+          "value": "-341 bps/year",
+          "t_stat": -0.8446196496086755
+        }
+      ],
+      "takeaway": "The faint ranking does not survive the step from a Spearman coefficient to a fully invested, hedged, costed book. That is the expected reading of a NO-GO IC gate."
+    },
+    {
+      "id": "quintile_21d",
+      "title": "Quintile means are not monotone at the 21-day horizon",
+      "hypothesis": "If the score ranks forward returns, mean 21-day return should rise across quintiles.",
+      "what_we_did": "Equal-count quintiles of the opportunistic score versus 21-day forward returns, 144 monthly rebalances.",
+      "what_happened": "Q1 71 bps, Q2 108, Q3 101, Q4 111, Q5 124. Q2 exceeds Q3. Spread Q5\u2212Q1 is 53 bps (t = 2.40) but the sort is not monotonic.",
+      "evidence": [
+        {
+          "label": "Q1 mean 21d return",
+          "value": "71 bps",
+          "t_stat": null
+        },
+        {
+          "label": "Q2 mean 21d return",
+          "value": "108 bps",
+          "t_stat": null
+        },
+        {
+          "label": "Q3 mean 21d return",
+          "value": "101 bps",
+          "t_stat": null
+        },
+        {
+          "label": "Q5 mean 21d return",
+          "value": "124 bps",
+          "t_stat": null
+        },
+        {
+          "label": "Q5\u2212Q1 spread",
+          "value": "53 bps",
+          "t_stat": 2.3993907178306957
+        }
+      ],
+      "takeaway": "A rank IC of +0.0165 can coexist with a non-monotone quintile sort. The 63- and 126-day sorts are monotone; the horizon the book actually trades is not."
+    },
+    {
+      "id": "cmp_magnitude",
+      "title": "Insider purchases do not earn ~82 bps/month out of sample",
+      "hypothesis": "Opportunistic insider purchases should earn roughly 82 bps per month, the magnitude Cohen, Malloy & Pomorski report for 1986\u20132007.",
+      "what_we_did": "Replicated the classifier and the purchase score as specified and measured ICs, quintile spreads, and a costed overlapping book on 2014\u20132025.",
+      "what_happened": "Nothing in the modern sample is in the neighborhood of 82 bps/month. The 21-day Q5\u2212Q1 spread is 53 bps over 21 days, not a month of abnormal return, and the tradable book loses 6.3% a year net of costs.",
+      "evidence": [
+        {
+          "label": "CMP published premium",
+          "value": "82 bps/month",
+          "t_stat": null
+        },
+        {
+          "label": "21d Q5\u2212Q1 (this sample)",
+          "value": "53 bps / 21d",
+          "t_stat": 2.3993907178306957
+        },
+        {
+          "label": "Primary net CAGR",
+          "value": "-6.3%",
+          "t_stat": null
+        },
+        {
+          "label": "Residual FF5+UMD alpha",
+          "value": "-341 bps/year",
+          "t_stat": -0.8446196496086755
+        }
+      ],
+      "takeaway": "The published magnitude is not in the out-of-sample window. Reporting that is the project, not a failure of it."
+    },
+    {
+      "id": "parameter_fishing",
+      "title": "The W\u00d7\u03bb surface is a flat weak plateau",
+      "hypothesis": "If the default (W=90, \u03bb=0.5) was unlucky, some nearby aggregation window or cluster weight would recover a usable IC.",
+      "what_we_did": "Swept W \u2208 [30.0, 60.0, 90.0, 120.0, 180.0] against \u03bb \u2208 [0.0, 0.25, 0.5, 0.75, 1.0] and recorded 21-day mean IC and its Newey-West t-statistic at every cell.",
+      "what_happened": "21-day mean IC ranges from +0.0024 to +0.0182 (10 of 25 cells with |t| \u2265 2). The surface is read as a weak plateau rather than a specification that works; the default cell is +0.0165 (t = 2.16).",
+      "evidence": [
+        {
+          "label": "Sweep metric",
+          "value": "21-day mean Spearman IC",
+          "t_stat": null
+        },
+        {
+          "label": "Cells",
+          "value": "25",
+          "t_stat": null
+        },
+        {
+          "label": "Default cell (W=90, \u03bb=0.5)",
+          "value": "+0.0165",
+          "t_stat": 2.1632624910912504
+        }
+      ],
+      "takeaway": "A decay study does not get to keep looking until a cell lights up. The surface was computed to show there is no such cell."
+    }
+  ]
+}

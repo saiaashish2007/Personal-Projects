@@ -1,0 +1,13 @@
+{
+  "name": "personal-projects",
+  "private": true,
+  "description": "Monorepo root. The Next.js app lives in insider-alpha/web — this file exists so a Vercel project whose Root Directory is still the repo root can detect Next.js.",
+  "scripts": {
+    "build": "npm ci --prefix insider-alpha/web && npm run validate --prefix insider-alpha/web && npm run build --prefix insider-alpha/web"
+  },
+  "dependencies": {
+    "next": "^16.3.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "npm ci --prefix insider-alpha/web",
+  "buildCommand": "npm run validate --prefix insider-alpha/web && npm run build --prefix insider-alpha/web",
+  "outputDirectory": "insider-alpha/web/out"
+}

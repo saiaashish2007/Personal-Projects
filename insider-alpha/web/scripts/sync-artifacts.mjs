@@ -16,6 +16,12 @@ const SOURCE = join(HERE, "..", "..", "artifacts");
 const DEST = join(HERE, "..", "artifacts");
 
 if (!existsSync(SOURCE)) {
+  const destHasJson =
+    existsSync(DEST) && readdirSync(DEST).some((file) => file.endsWith(".json"));
+  if (destHasJson) {
+    console.log(`No ${SOURCE}; using committed copy in web/artifacts/.`);
+    process.exit(0);
+  }
   console.error(`No artifacts directory at ${SOURCE}.`);
   process.exit(1);
 }

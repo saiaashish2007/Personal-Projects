@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "meta",
+  "generated_at": "2026-08-13T16:42:23Z",
+  "data_status": "real",
+  "notes": "Pipeline through Milestone 6. Milestones 1\u20136 complete. This is a decay study: the IC gate failed and the primary book loses money after factors. classifier.json, ic.json, backtest.json and costs.json were not rewritten.",
+  "run": {
+    "timestamp": "2026-08-13T16:42:23Z",
+    "git_sha": null,
+    "git_dirty": null,
+    "duration_seconds": 133.3019097080105
+  },
+  "sample": {
+    "start": "2014-01-01",
+    "end": "2025-12-31",
+    "burn_in_start": "2011-01-01",
+    "rebalance_frequency": "monthly, first trading day",
+    "n_rebalance_dates": 144
+  },
+  "universe": {
+    "name": "Top 1500 US common stocks by market capitalization",
+    "description": "Mechanically reconstructed at each monthly rebalance date from observable fields only. No point-in-time index membership is used, so no lookahead enters through the screen.",
+    "target_size": 1500,
+    "screens": [
+      {
+        "name": "Security type",
+        "description": "US-listed common stock; ETFs, ADRs and closed-end funds excluded, REITs flagged",
+        "value": "common stock"
+      },
+      {
+        "name": "Size rank",
+        "description": "Rank by market capitalization as of t",
+        "value": "top 1500"
+      },
+      {
+        "name": "Price floor",
+        "description": "Close price at t",
+        "value": ">= $5.00"
+      },
+      {
+        "name": "Liquidity floor",
+        "description": "20-day median dollar volume at t",
+        "value": ">= $1,000,000"
+      }
+    ]
+  },
+  "software": {
+    "python_version": "3.14.0rc1",
+    "packages": [
+      {
+        "name": "pandas",
+        "version": "2.3.2"
+      },
+      {
+        "name": "numpy",
+        "version": "2.4.0"
+      },
+      {
+        "name": "pyarrow",
+        "version": "23.0.1"
+      },
+      {
+        "name": "scipy",
+        "version": "1.16.3"
+      }
+    ]
+  },
+  "pipeline_stages": [
+    {
+      "milestone": 1,
+      "name": "DERA ingestion + Form 4 parser",
+      "status": "complete",
+      "artifact": "data_profile"
+    },
+    {
+      "milestone": 2,
+      "name": "Universe, prices, forward returns",
+      "status": "complete",
+      "artifact": null
+    },
+    {
+      "milestone": 3,
+      "name": "Routine/opportunistic classifier",
+      "status": "complete",
+      "artifact": "classifier"
+    },
+    {
+      "milestone": 4,
+      "name": "Signal + IC analysis (go/no-go)",
+      "status": "complete",
+      "artifact": "ic"
+    },
+    {
+      "milestone": 5,
+      "name": "Backtest + cost model",
+      "status": "complete",
+      "artifact": "backtest"
+    },
+    {
+      "milestone": 6,
+      "name": "Attribution + robustness",
+      "status": "complete",
+      "artifact": "attribution"
+    },
+    {
+      "milestone": 7,
+      "name": "Dashboard + Vercel deploy",
+      "status": "partial",
+      "artifact": null
+    }
+  ]
+}

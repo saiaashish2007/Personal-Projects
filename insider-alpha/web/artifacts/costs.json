@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "costs",
+  "generated_at": "2026-08-13T16:28:51Z",
+  "data_status": "real",
+  "notes": "Explicit model plus a flat round-trip sweep on the primary variant opp_etf_3m. Alpha on the sweep is annualized excess versus Ken French RF (Newey-West, 3 lags), not a full FF5 alpha. Turnover is one-sided notional / NAV.",
+  "variant_id": "opp_etf_3m",
+  "explicit_model": {
+    "description": "Round-trip cost per name is half-spread plus square-root impact. Half-spread is proxied by capitalization tercile of the universe at t (5 / 10 / 20 bps large / mid / small). Impact is k times the square root of participation, with participation capped at 10% of 20-day median dollar volume and a $10mm book. k is in percent return units (0.32 \u2192 10 bps of impact at the cap). Sector-ETF hedge trades are charged as large-cap. Alpha on the sweep is annualized excess versus Ken French RF, Newey-West t-stat with 3 monthly lags \u2014 not a full FF5 alpha (Milestone 6).",
+    "half_spreads": [
+      {
+        "cap_tercile": "large",
+        "half_spread_bps": 5.0
+      },
+      {
+        "cap_tercile": "mid",
+        "half_spread_bps": 10.0
+      },
+      {
+        "cap_tercile": "small",
+        "half_spread_bps": 20.0
+      }
+    ],
+    "impact_coefficient_k": 0.32,
+    "participation_cap": 0.1,
+    "estimated_round_trip_bps": 15.670449791982326
+  },
+  "sweep": [
+    {
+      "round_trip_bps": 0.0,
+      "net_sharpe": -0.3588556798992212,
+      "net_ann_return": -0.054883883933592226,
+      "net_alpha_ann_bps": -597.9066031018491,
+      "alpha_t_stat": -1.2444644683196882
+    },
+    {
+      "round_trip_bps": 5.0,
+      "net_sharpe": -0.37512135986977824,
+      "net_ann_return": -0.057455408026303556,
+      "net_alpha_ann_bps": -624.9933708019098,
+      "alpha_t_stat": -1.3008717301293347
+    },
+    {
+      "round_trip_bps": 10.0,
+      "net_sharpe": -0.3913874862308204,
+      "net_ann_return": -0.06002053808575014,
+      "net_alpha_ann_bps": -652.0801385019705,
+      "alpha_t_stat": -1.3572805462066626
+    },
+    {
+      "round_trip_bps": 15.0,
+      "net_sharpe": -0.4076540221063029,
+      "net_ann_return": -0.06257928852118044,
+      "net_alpha_ann_bps": -679.1669062020314,
+      "alpha_t_stat": -1.4136907892834585
+    },
+    {
+      "round_trip_bps": 20.0,
+      "net_sharpe": -0.42392093061259517,
+      "net_ann_return": -0.06513167371270545,
+      "net_alpha_ann_bps": -706.2536739020919,
+      "alpha_t_stat": -1.4701023320652666
+    },
+    {
+      "round_trip_bps": 25.0,
+      "net_sharpe": -0.44018817485889794,
+      "net_ann_return": -0.06767770801135387,
+      "net_alpha_ann_bps": -733.3404416021527,
+      "alpha_t_stat": -1.5265150472328264
+    },
+    {
+      "round_trip_bps": 30.0,
+      "net_sharpe": -0.4564557179476612,
+      "net_ann_return": -0.07021740573912283,
+      "net_alpha_ann_bps": -760.4272093022134,
+      "alpha_t_stat": -1.5829288074435026
+    },
+    {
+      "round_trip_bps": 35.0,
+      "net_sharpe": -0.47272352297500103,
+      "net_ann_return": -0.07275078118902967,
+      "net_alpha_ann_bps": -787.5139770022741,
+      "alpha_t_stat": -1.6393434853327216
+    },
+    {
+      "round_trip_bps": 40.0,
+      "net_sharpe": -0.4889915530311182,
+      "net_ann_return": -0.07527784862516418,
+      "net_alpha_ann_bps": -814.6007447023349,
+      "alpha_t_stat": -1.695758953515405
+    },
+    {
+      "round_trip_bps": 45.0,
+      "net_sharpe": -0.505259771200715,
+      "net_ann_return": -0.0777986222827407,
+      "net_alpha_ann_bps": -841.6875124023953,
+      "alpha_t_stat": -1.7521750845874065
+    },
+    {
+      "round_trip_bps": 50.0,
+      "net_sharpe": -0.5215281405634145,
+      "net_ann_return": -0.08031311636815008,
+      "net_alpha_ann_bps": -868.7742801024561,
+      "alpha_t_stat": -1.8085917511269478
+    },
+    {
+      "round_trip_bps": 55.0,
+      "net_sharpe": -0.5377966241941786,
+      "net_ann_return": -0.08282134505901084,
+      "net_alpha_ann_bps": -895.8610478025169,
+      "alpha_t_stat": -1.8650088256960535
+    },
+    {
+      "round_trip_bps": 60.0,
+      "net_sharpe": -0.5540651851637262,
+      "net_ann_return": -0.08532332250422081,
+      "net_alpha_ann_bps": -922.9478155025777,
+      "alpha_t_stat": -1.9214261808419912
+    },
+    {
+      "round_trip_bps": 65.0,
+      "net_sharpe": -0.5703337865389521,
+      "net_ann_return": -0.08781906282400964,
+      "net_alpha_ann_bps": -950.0345832026381,
+      "alpha_t_stat": -1.977843689098709
+    },
+    {
+      "round_trip_bps": 70.0,
+      "net_sharpe": -0.5866023913833454,
+      "net_ann_return": -0.09030858010998877,
+      "net_alpha_ann_bps": -977.1213509026991,
+      "alpha_t_stat": -2.034261222988272
+    },
+    {
+      "round_trip_bps": 75.0,
+      "net_sharpe": -0.6028709627574091,
+      "net_ann_return": -0.09279188842520458,
+      "net_alpha_ann_bps": -1004.2081186027596,
+      "alpha_t_stat": -2.0906786550223013
+    },
+    {
+      "round_trip_bps": 80.0,
+      "net_sharpe": -0.6191394637190787,
+      "net_ann_return": -0.09526900180418785,
+      "net_alpha_ann_bps": -1031.2948863028205,
+      "alpha_t_stat": -2.147095857703415
+    },
+    {
+      "round_trip_bps": 85.0,
+      "net_sharpe": -0.6354078573241404,
+      "net_ann_return": -0.09773993425300642,
+      "net_alpha_ann_bps": -1058.3816540028813,
+      "alpha_t_stat": -2.2035127035266684
+    },
+    {
+      "round_trip_bps": 90.0,
+      "net_sharpe": -0.651676106626652,
+      "net_ann_return": -0.1002046997493159,
+      "net_alpha_ann_bps": -1085.468421702942,
+      "alpha_t_stat": -2.259929064980988
+    },
+    {
+      "round_trip_bps": 95.0,
+      "net_sharpe": -0.6679441746793612,
+      "net_ann_return": -0.10266331224241054,
+      "net_alpha_ann_bps": -1112.5551894030025,
+      "alpha_t_stat": -2.3163448145506176
+    },
+    {
+      "round_trip_bps": 100.0,
+      "net_sharpe": -0.6842120245341249,
+      "net_ann_return": -0.10511578565327417,
+      "net_alpha_ann_bps": -1139.641957103063,
+      "alpha_t_stat": -2.372759824716558
+    }
+  ],
+  "break_even": {
+    "alpha_zero_bps": null,
+    "sharpe_zero_bps": null,
+    "interpretation": "Annualized excess return versus RF is never positive on the 0\u2013100 bp sweep, so there is no break-even cost: the book does not earn its cost of capital even in a frictionless market. The explicit model estimates 15.7 bps round-trip against 5.42x annual turnover. Net alpha dying at realistic costs is the expected reading of a NO-GO IC gate, not a surprise."
+  },
+  "turnover": {
+    "annualized": 5.417353540012139,
+    "avg_monthly": 0.45144612833434494,
+    "note": "Turnover is one-sided traded notional divided by NAV (0.5 \u00d7 \u03a3|\u0394w_i|), annualized as 12 \u00d7 mean monthly. Overlapping three-month vintages cut it relative to the one-month construction. The first month includes the initial build from cash."
+  }
+}

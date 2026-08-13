@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run validate && npm run build",
+  "buildCommand": "node scripts/sync-artifacts.mjs && npm run validate && npm run build",
   "outputDirectory": "out",
   "installCommand": "npm ci",
   "cleanUrls": true,

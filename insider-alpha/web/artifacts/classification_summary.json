@@ -1,0 +1,385 @@
+{
+  "config": {
+    "lookback_years": 3,
+    "anchor": "calendar",
+    "month_basis": "transaction",
+    "require_trade_every_year": true,
+    "codes": [
+      "P",
+      "S"
+    ]
+  },
+  "runtime_seconds": 1.52,
+  "n_trades": 4491080,
+  "n_insiders": 102461,
+  "eval_dates": [
+    "2011-01-01",
+    "2012-01-01",
+    "2013-01-01",
+    "2014-01-01",
+    "2015-01-01",
+    "2016-01-01",
+    "2017-01-01",
+    "2018-01-01",
+    "2019-01-01",
+    "2020-01-01",
+    "2021-01-01",
+    "2022-01-01",
+    "2023-01-01",
+    "2024-01-01",
+    "2025-01-01"
+  ],
+  "insider_counts": {
+    "2011-01-01 00:00:00": {
+      "unclassified": 0,
+      "routine": 0,
+      "opportunistic": 0
+    },
+    "2012-01-01 00:00:00": {
+      "unclassified": 23400,
+      "routine": 10,
+      "opportunistic": 19
+    },
+    "2013-01-01 00:00:00": {
+      "unclassified": 33788,
+      "routine": 83,
+      "opportunistic": 339
+    },
+    "2014-01-01 00:00:00": {
+      "unclassified": 34570,
+      "routine": 2434,
+      "opportunistic": 5449
+    },
+    "2015-01-01 00:00:00": {
+      "unclassified": 41239,
+      "routine": 2492,
+      "opportunistic": 5787
+    },
+    "2016-01-01 00:00:00": {
+      "unclassified": 47390,
+      "routine": 2540,
+      "opportunistic": 5639
+    },
+    "2017-01-01 00:00:00": {
+      "unclassified": 53067,
+      "routine": 2311,
+      "opportunistic": 5193
+    },
+    "2018-01-01 00:00:00": {
+      "unclassified": 58355,
+      "routine": 2296,
+      "opportunistic": 4976
+    },
+    "2019-01-01 00:00:00": {
+      "unclassified": 63572,
+      "routine": 2093,
+      "opportunistic": 4788
+    },
+    "2020-01-01 00:00:00": {
+      "unclassified": 68247,
+      "routine": 2193,
+      "opportunistic": 4543
+    },
+    "2021-01-01 00:00:00": {
+      "unclassified": 73414,
+      "routine": 2102,
+      "opportunistic": 4515
+    },
+    "2022-01-01 00:00:00": {
+      "unclassified": 79332,
+      "routine": 2238,
+      "opportunistic": 4415
+    },
+    "2023-01-01 00:00:00": {
+      "unclassified": 84373,
+      "routine": 2160,
+      "opportunistic": 3965
+    },
+    "2024-01-01 00:00:00": {
+      "unclassified": 88541,
+      "routine": 2270,
+      "opportunistic": 3853
+    },
+    "2025-01-01 00:00:00": {
+      "unclassified": 92590,
+      "routine": 2357,
+      "opportunistic": 3690
+    }
+  },
+  "trade_shares_by_year": {
+    "2011": {
+      "routine": 0.0,
+      "opportunistic": 0.0,
+      "unclassified": 1.0,
+      "n": 307476
+    },
+    "2012": {
+      "routine": 0.000600044845456871,
+      "opportunistic": 0.0008084814759839946,
+      "unclassified": 0.9985914736785592,
+      "n": 316643
+    },
+    "2013": {
+      "routine": 0.008538835926219868,
+      "opportunistic": 0.010167557523195737,
+      "unclassified": 0.9812936065505844,
+      "n": 313743
+    },
+    "2014": {
+      "routine": 0.12365462885199302,
+      "opportunistic": 0.1434847212352219,
+      "unclassified": 0.7328606499127851,
+      "n": 309580
+    },
+    "2015": {
+      "routine": 0.13555455799956773,
+      "opportunistic": 0.14592248989974563,
+      "unclassified": 0.7185229521006866,
+      "n": 300735
+    },
+    "2016": {
+      "routine": 0.1288959020017325,
+      "opportunistic": 0.14127149013870866,
+      "unclassified": 0.7298326078595588,
+      "n": 278209
+    },
+    "2017": {
+      "routine": 0.11533429513019618,
+      "opportunistic": 0.14053903056533854,
+      "unclassified": 0.7441266743044653,
+      "n": 282804
+    },
+    "2018": {
+      "routine": 0.11335751554812644,
+      "opportunistic": 0.13054335541765075,
+      "unclassified": 0.7560991290342228,
+      "n": 295534
+    },
+    "2019": {
+      "routine": 0.1080308069315596,
+      "opportunistic": 0.1304883598809732,
+      "unclassified": 0.7614808331874672,
+      "n": 285650
+    },
+    "2020": {
+      "routine": 0.12629809413917956,
+      "opportunistic": 0.1337186169577846,
+      "unclassified": 0.7399832889030359,
+      "n": 301596
+    },
+    "2021": {
+      "routine": 0.10904394917725474,
+      "opportunistic": 0.15238769700756788,
+      "unclassified": 0.7385683538151774,
+      "n": 360075
+    },
+    "2022": {
+      "routine": 0.12522908187852416,
+      "opportunistic": 0.1122668289439897,
+      "unclassified": 0.7625040891774861,
+      "n": 284287
+    },
+    "2023": {
+      "routine": 0.12106521021430519,
+      "opportunistic": 0.10707365036530926,
+      "unclassified": 0.7718611394203856,
+      "n": 278668
+    },
+    "2024": {
+      "routine": 0.127467536642898,
+      "opportunistic": 0.11139914784745183,
+      "unclassified": 0.7611333155096501,
+      "n": 295487
+    },
+    "2025": {
+      "routine": 0.1520957400933024,
+      "opportunistic": 0.10711600075554273,
+      "unclassified": 0.7407882591511549,
+      "n": 280593
+    }
+  },
+  "cmp_comparison": [
+    {
+      "metric": "classified share of all trades",
+      "realized": 0.2538690280191083,
+      "cmp_reported": 0.3333333333333333
+    },
+    {
+      "metric": "routine share of classified trades",
+      "realized": 0.4865783790734902,
+      "cmp_reported": 0.5481
+    },
+    {
+      "metric": "routine share of classified buys",
+      "realized": 0.5924543653601245,
+      "cmp_reported": 0.6444
+    },
+    {
+      "metric": "routine share of classified sells",
+      "realized": 0.566417118122669,
+      "cmp_reported": 0.5202
+    }
+  ],
+  "validation_10b5_1": {
+    "all_codes_2024plus": {
+      "n": 143315,
+      "routine_flagged": 38342,
+      "routine_unflagged": 42000,
+      "opportunistic_flagged": 15593,
+      "opportunistic_unflagged": 47380,
+      "flag_rate_routine": 0.47723482113962806,
+      "flag_rate_opportunistic": 0.24761405681800136,
+      "odds_ratio": 2.77390031546512,
+      "odds_ratio_ci95": [
+        2.7114145168952866,
+        2.837826128093512
+      ],
+      "chi2": 7930.48874439734,
+      "p_value": 0.0,
+      "lift": 1.9273333156945935,
+      "start": "2024-01-01",
+      "codes": "all",
+      "flag_rate_unclassified": 0.1646898432174506,
+      "n_unclassified": 432765,
+      "insider_level": {
+        "n": 10322,
+        "routine_flagged": 1688,
+        "routine_unflagged": 2383,
+        "opportunistic_flagged": 1239,
+        "opportunistic_unflagged": 5012,
+        "flag_rate_routine": 0.41464013755833945,
+        "flag_rate_opportunistic": 0.19820828667413215,
+        "odds_ratio": 2.865419129379242,
+        "odds_ratio_ci95": [
+          2.6238753848193,
+          3.129198449940083
+        ],
+        "chi2": 568.4547531228445,
+        "p_value": 1.2174473923065184e-125,
+        "lift": 2.091941484969475
+      }
+    },
+    "open_market_2024plus": {
+      "n": 82200,
+      "routine_flagged": 31760,
+      "routine_unflagged": 22412,
+      "opportunistic_flagged": 12044,
+      "opportunistic_unflagged": 15984,
+      "flag_rate_routine": 0.5862807354352803,
+      "flag_rate_opportunistic": 0.4297131439988583,
+      "odds_ratio": 1.880678691783527,
+      "odds_ratio_ci95": [
+        1.8265872607754876,
+        1.9363719531400683
+      ],
+      "chi2": 1819.0422408626218,
+      "p_value": 0.0,
+      "lift": 1.3643537406825004,
+      "start": "2024-01-01",
+      "codes": [
+        "P",
+        "S"
+      ],
+      "flag_rate_unclassified": 0.41668433093830176,
+      "n_unclassified": 136811,
+      "insider_level": {
+        "n": 8106,
+        "routine_flagged": 1678,
+        "routine_unflagged": 1885,
+        "opportunistic_flagged": 1217,
+        "opportunistic_unflagged": 3326,
+        "flag_rate_routine": 0.47095144541117034,
+        "flag_rate_opportunistic": 0.2678846577151662,
+        "odds_ratio": 2.4328328345782233,
+        "odds_ratio_ci95": [
+          2.2169005438428924,
+          2.669797532162705
+        ],
+        "chi2": 358.6520478334004,
+        "p_value": 5.5347521114157215e-80,
+        "lift": 1.7580381401010245
+      }
+    },
+    "purchases_2024plus": {
+      "n": 16031,
+      "routine_flagged": 1448,
+      "routine_unflagged": 9409,
+      "opportunistic_flagged": 180,
+      "opportunistic_unflagged": 4994,
+      "flag_rate_routine": 0.13337017592336742,
+      "flag_rate_opportunistic": 0.03478933127174333,
+      "odds_ratio": 4.269737013025354,
+      "odds_ratio_ci95": [
+        3.643310955802385,
+        5.003869936318309
+      ],
+      "chi2": 373.22831569039334,
+      "p_value": 3.7093503012479376e-83,
+      "lift": 3.833651612375017,
+      "start": "2024-01-01",
+      "codes": [
+        "P"
+      ],
+      "flag_rate_unclassified": 0.05845593486644765,
+      "n_unclassified": 28004,
+      "insider_level": {
+        "n": 1894,
+        "routine_flagged": 25,
+        "routine_unflagged": 663,
+        "opportunistic_flagged": 19,
+        "opportunistic_unflagged": 1187,
+        "flag_rate_routine": 0.036337209302325583,
+        "flag_rate_opportunistic": 0.015754560530679935,
+        "odds_ratio": 2.355719615781535,
+        "odds_ratio_ci95": [
+          1.2876126545759812,
+          4.309848065298303
+        ],
+        "chi2": 8.178880110783528,
+        "p_value": 0.004238091669773462,
+        "lift": 2.3064565483476134
+      }
+    },
+    "open_market_2023plus": {
+      "n": 106487,
+      "routine_flagged": 38043,
+      "routine_unflagged": 31528,
+      "opportunistic_flagged": 14380,
+      "opportunistic_unflagged": 22536,
+      "flag_rate_routine": 0.5468226703655259,
+      "flag_rate_opportunistic": 0.38953299382381623,
+      "odds_ratio": 1.8910207020873602,
+      "odds_ratio_ci95": [
+        1.843042391142421,
+        1.9402479904471392
+      ],
+      "chi2": 2387.31578091577,
+      "p_value": 0.0,
+      "lift": 1.4037903824209843,
+      "start": "2023-01-01",
+      "codes": [
+        "P",
+        "S"
+      ],
+      "flag_rate_unclassified": 0.37697413106144473,
+      "n_unclassified": 186981,
+      "insider_level": {
+        "n": 11433,
+        "routine_flagged": 2226,
+        "routine_unflagged": 2740,
+        "opportunistic_flagged": 1660,
+        "opportunistic_unflagged": 4807,
+        "flag_rate_routine": 0.4482480869915425,
+        "flag_rate_opportunistic": 0.25668779959795884,
+        "odds_ratio": 2.3525595813912585,
+        "odds_ratio_ci95": [
+          2.173856023803715,
+          2.5459536065832604
+        ],
+        "chi2": 459.413331118282,
+        "p_value": 6.450014958702636e-102,
+        "lift": 1.7462773364905455
+      }
+    }
+  }
+}
