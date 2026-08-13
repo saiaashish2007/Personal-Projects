@@ -1,23 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "node scripts/sync-artifacts.mjs && npm run validate && npm run build",
-  "outputDirectory": "out",
   "installCommand": "npm ci",
+  "buildCommand": "node scripts/sync-artifacts.mjs && npm run validate && npm run build",
   "cleanUrls": true,
   "trailingSlash": true,
-  "github": { "silent": true },
-  "headers": [
-    {
-      "source": "/_next/static/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-      ]
-    }
-  ]
+  "github": { "silent": true }
 }
