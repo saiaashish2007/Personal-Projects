@@ -58,9 +58,8 @@ monorepo deploys**, so get it right first.
    during import; the default of `./` will fail because there is no `package.json` at the
    repository root.
 3. Under *Build & Development Settings*, leave everything on the defaults — the framework
-   preset is detected as Next.js and `vercel.json` in this directory already pins the build
-   command (`npm run validate && npm run build`), the install command (`npm ci`), and the
-   output directory (`out`).
+   preset is Next.js. **Do not set Output Directory to `out`.** The Next.js builder looks
+   for `routes-manifest.json` there and fails; `next.config` `output: "export"` is enough.
 4. Expand *Root Directory* options and **enable "Include source files outside of the Root
    Directory in the Build Step."** The build reads `../artifacts/`, which lives above the
    root directory. If this is left off, the build fails with
@@ -95,7 +94,8 @@ implicitly — but the "include files outside root directory" concern above stil
 
 | Symptom | Cause |
 |---|---|
-| `Could not read package.json` at deploy | Root Directory is not set to `insider-alpha/web` |
+| `Could not read package.json` / `No Next.js version detected` | Root Directory is not `insider-alpha/web` |
+| `routes-manifest.json couldn't be found` under `.../out/` | Output Directory was set to `out`; clear it so Next.js uses `.next` |
 | `Artifact meta.json not found in any of: …` | "Include source files outside of the Root Directory" is off; enable it or run `npm run sync:artifacts` and commit `web/artifacts/` |
 | `ic.json is missing the "…" arm` | The pipeline wrote only one arm. Both the filter-on and filter-off arms are required; the comparison is the headline result |
 | `npm ci` fails | `package-lock.json` is out of sync with `package.json`; run `npm install` locally and commit the lockfile |
