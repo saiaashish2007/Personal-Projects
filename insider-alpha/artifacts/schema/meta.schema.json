@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/meta.schema.json",
+  "title": "meta.json",
+  "description": "Run provenance: when the pipeline ran, against what code, over what sample and universe.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "run",
+    "sample",
+    "universe",
+    "software",
+    "pipeline_stages"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "artifact": { "const": "meta" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timestamp", "git_sha", "git_dirty", "duration_seconds"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "git_sha": { "type": ["string", "null"] },
+        "git_dirty": { "type": ["boolean", "null"] },
+        "duration_seconds": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "burn_in_start", "rebalance_frequency", "n_rebalance_dates"],
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" },
+        "burn_in_start": { "type": "string", "format": "date" },
+        "rebalance_frequency": { "type": "string" },
+        "n_rebalance_dates": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "target_size", "screens"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "target_size": { "type": "integer", "minimum": 1 },
+        "screens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "description", "value"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["python_version", "packages"],
+      "properties": {
+        "python_version": { "type": "string" },
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": { "name": { "type": "string" }, "version": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "pipeline_stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["milestone", "name", "status", "artifact"],
+        "properties": {
+          "milestone": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string" },
+          "status": { "enum": ["complete", "partial", "not_run"] },
+          "artifact": {
+            "type": ["string", "null"],
+            "enum": [
+              "meta",
+              "data_profile",
+              "classifier",
+              "ic",
+              "backtest",
+              "costs",
+              "attribution",
+              "robustness",
+              "limitations",
+              null
+            ]
+          }
+        }
+      }
+    }
+  }
+}

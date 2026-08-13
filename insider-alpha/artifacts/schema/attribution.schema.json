@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/attribution.schema.json",
+  "title": "attribution.json",
+  "description": "Fama-French 5 plus momentum regressions. At minimum the primary variant net of costs; gross, the raw quintile spread, and the filter-off portfolio are strongly recommended so the reader can see where the return comes from.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "primary_regression_id",
+    "regressions",
+    "interpretation"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "attribution" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "primary_regression_id": { "type": "string" },
+    "interpretation": { "type": "string" },
+    "regressions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "description",
+          "dependent_variable",
+          "alpha_ann_bps",
+          "alpha_std_error_bps",
+          "alpha_t_stat",
+          "alpha_p_value",
+          "loadings",
+          "r_squared",
+          "adj_r_squared",
+          "n_months",
+          "newey_west_lags"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "dependent_variable": { "type": "string" },
+          "alpha_ann_bps": { "type": "number", "description": "Annualized alpha in basis points." },
+          "alpha_std_error_bps": { "type": "number", "minimum": 0 },
+          "alpha_t_stat": { "type": "number", "description": "Newey-West adjusted." },
+          "alpha_p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+          "loadings": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["factor", "label", "beta", "std_error", "t_stat", "p_value"],
+              "properties": {
+                "factor": { "enum": ["MKT", "SMB", "HML", "RMW", "CMA", "UMD"] },
+                "label": { "type": "string" },
+                "beta": { "type": "number" },
+                "std_error": { "type": "number", "minimum": 0 },
+                "t_stat": { "type": "number" },
+                "p_value": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "r_squared": { "type": "number", "minimum": 0, "maximum": 1 },
+          "adj_r_squared": { "type": "number", "maximum": 1 },
+          "n_months": { "type": "integer", "minimum": 1 },
+          "newey_west_lags": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

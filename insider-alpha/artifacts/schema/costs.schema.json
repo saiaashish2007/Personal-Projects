@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/costs.schema.json",
+  "title": "costs.json",
+  "description": "Explicit cost model plus the flat round-trip cost sensitivity sweep and the break-even cost at which alpha reaches zero.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "variant_id",
+    "explicit_model",
+    "sweep",
+    "break_even",
+    "turnover"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "costs" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "variant_id": {
+      "type": "string",
+      "description": "The backtest.json variant this sweep was run on."
+    },
+    "explicit_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "half_spreads",
+        "impact_coefficient_k",
+        "participation_cap",
+        "estimated_round_trip_bps"
+      ],
+      "properties": {
+        "description": { "type": "string" },
+        "half_spreads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cap_tercile", "half_spread_bps"],
+            "properties": {
+              "cap_tercile": { "enum": ["large", "mid", "small"] },
+              "half_spread_bps": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "impact_coefficient_k": { "type": "number", "minimum": 0 },
+        "participation_cap": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "estimated_round_trip_bps": { "type": "number", "minimum": 0 }
+      }
+    },
+    "sweep": {
+      "type": "array",
+      "minItems": 2,
+      "description": "Flat round-trip cost from 0 to 100 bps. Any step size; 5 bps is what the dashboard was designed against.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["round_trip_bps", "net_sharpe", "net_ann_return", "net_alpha_ann_bps", "alpha_t_stat"],
+        "properties": {
+          "round_trip_bps": { "type": "number", "minimum": 0 },
+          "net_sharpe": { "type": "number" },
+          "net_ann_return": { "type": "number" },
+          "net_alpha_ann_bps": { "type": "number" },
+          "alpha_t_stat": { "type": "number" }
+        }
+      }
+    },
+    "break_even": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alpha_zero_bps", "sharpe_zero_bps", "interpretation"],
+      "properties": {
+        "alpha_zero_bps": {
+          "type": ["number", "null"],
+          "description": "Round-trip cost in bps at which annualized alpha crosses zero. Null if alpha is never positive."
+        },
+        "sharpe_zero_bps": { "type": ["number", "null"] },
+        "interpretation": { "type": "string" }
+      }
+    },
+    "turnover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["annualized", "avg_monthly", "note"],
+      "properties": {
+        "annualized": { "type": "number", "minimum": 0 },
+        "avg_monthly": { "type": "number", "minimum": 0 },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

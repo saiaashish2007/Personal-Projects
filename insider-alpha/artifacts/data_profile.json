@@ -1,0 +1,1501 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "data_profile",
+  "generated_at": "2026-08-13T16:40:18Z",
+  "data_status": "real",
+  "notes": "Descriptive statistics on the committed Form 4 table (2011\u20132025). superseded_rows_removed is the SPEC \u00a75.2 count; the parquet is post-dedup.",
+  "coverage": {
+    "start": "2011-01-03",
+    "end": "2025-12-31"
+  },
+  "totals": {
+    "transactions": 4491080,
+    "filings": 2291596,
+    "distinct_issuers": 12798,
+    "distinct_insiders": 149693,
+    "open_market_purchases": 489372,
+    "superseded_rows_removed": 59480,
+    "dropped_missing_price": 10332
+  },
+  "transaction_codes": [
+    {
+      "code": "S",
+      "label": "Open-market or private sale",
+      "count": 1310483,
+      "share": 0.2917968506461697,
+      "included_in_signal": false
+    },
+    {
+      "code": "A",
+      "label": "Grant, award, or other acquisition",
+      "count": 905647,
+      "share": 0.2016546131442771,
+      "included_in_signal": false
+    },
+    {
+      "code": "M",
+      "label": "Exercise or conversion of derivative",
+      "count": 684398,
+      "share": 0.15239051631233466,
+      "included_in_signal": false
+    },
+    {
+      "code": "F",
+      "label": "Shares withheld for tax obligation",
+      "count": 656393,
+      "share": 0.14615482244805258,
+      "included_in_signal": false
+    },
+    {
+      "code": "P",
+      "label": "Open-market or private purchase",
+      "count": 489372,
+      "share": 0.10896532682561878,
+      "included_in_signal": true
+    },
+    {
+      "code": "J",
+      "label": "Other acquisition or disposition",
+      "count": 143236,
+      "share": 0.03189344211191963,
+      "included_in_signal": false
+    },
+    {
+      "code": "G",
+      "label": "Bona fide gift",
+      "count": 103035,
+      "share": 0.022942143092530082,
+      "included_in_signal": false
+    },
+    {
+      "code": "D",
+      "label": "Disposition to the issuer",
+      "count": 102358,
+      "share": 0.022791399841463524,
+      "included_in_signal": false
+    },
+    {
+      "code": "C",
+      "label": "Conversion of derivative security",
+      "count": 64546,
+      "share": 0.014372044140830268,
+      "included_in_signal": false
+    },
+    {
+      "code": "X",
+      "label": "Exercise of in-the-money derivative",
+      "count": 10182,
+      "share": 0.0022671606829537663,
+      "included_in_signal": false
+    },
+    {
+      "code": "U",
+      "label": "Tender of shares",
+      "count": 7289,
+      "share": 0.001622994914363583,
+      "included_in_signal": false
+    },
+    {
+      "code": "L",
+      "label": "Small acquisition",
+      "count": 6138,
+      "share": 0.0013667091211913393,
+      "included_in_signal": false
+    },
+    {
+      "code": "I",
+      "label": "Discretionary transaction",
+      "count": 5629,
+      "share": 0.001253373353402745,
+      "included_in_signal": false
+    },
+    {
+      "code": "W",
+      "label": "Acquisition or disposition by will",
+      "count": 1407,
+      "share": 0.00031328767245295116,
+      "included_in_signal": false
+    },
+    {
+      "code": "Z",
+      "label": "Voting trust deposit or withdrawal",
+      "count": 680,
+      "share": 0.0001514112418393794,
+      "included_in_signal": false
+    },
+    {
+      "code": "O",
+      "label": "Code O",
+      "count": 210,
+      "share": 4.67593540974554e-05,
+      "included_in_signal": false
+    },
+    {
+      "code": "H",
+      "label": "Expiration of long position",
+      "count": 47,
+      "share": 1.04651887741924e-05,
+      "included_in_signal": false
+    },
+    {
+      "code": "E",
+      "label": "Expiration of short position",
+      "count": 27,
+      "share": 6.011916955387123e-06,
+      "included_in_signal": false
+    }
+  ],
+  "event_density": [
+    {
+      "month": "2011-01",
+      "qualifying_purchases": 2060,
+      "distinct_issuers": 428,
+      "distinct_insiders": 850,
+      "median_trade_value_usd": 4945.01
+    },
+    {
+      "month": "2011-02",
+      "qualifying_purchases": 2584,
+      "distinct_issuers": 596,
+      "distinct_insiders": 1112,
+      "median_trade_value_usd": 9152.0
+    },
+    {
+      "month": "2011-03",
+      "qualifying_purchases": 3884,
+      "distinct_issuers": 891,
+      "distinct_insiders": 1345,
+      "median_trade_value_usd": 9499.5
+    },
+    {
+      "month": "2011-04",
+      "qualifying_purchases": 2003,
+      "distinct_issuers": 466,
+      "distinct_insiders": 906,
+      "median_trade_value_usd": 8681.75
+    },
+    {
+      "month": "2011-05",
+      "qualifying_purchases": 4380,
+      "distinct_issuers": 906,
+      "distinct_insiders": 1508,
+      "median_trade_value_usd": 9752.9
+    },
+    {
+      "month": "2011-06",
+      "qualifying_purchases": 2894,
+      "distinct_issuers": 761,
+      "distinct_insiders": 1271,
+      "median_trade_value_usd": 10000.2
+    },
+    {
+      "month": "2011-07",
+      "qualifying_purchases": 1545,
+      "distinct_issuers": 391,
+      "distinct_insiders": 755,
+      "median_trade_value_usd": 6570.188999999999
+    },
+    {
+      "month": "2011-08",
+      "qualifying_purchases": 8309,
+      "distinct_issuers": 1441,
+      "distinct_insiders": 2932,
+      "median_trade_value_usd": 14184.0
+    },
+    {
+      "month": "2011-09",
+      "qualifying_purchases": 3780,
+      "distinct_issuers": 828,
+      "distinct_insiders": 1523,
+      "median_trade_value_usd": 9842.300000000001
+    },
+    {
+      "month": "2011-10",
+      "qualifying_purchases": 2148,
+      "distinct_issuers": 495,
+      "distinct_insiders": 891,
+      "median_trade_value_usd": 7103.0
+    },
+    {
+      "month": "2011-11",
+      "qualifying_purchases": 4065,
+      "distinct_issuers": 936,
+      "distinct_insiders": 1623,
+      "median_trade_value_usd": 10579.5
+    },
+    {
+      "month": "2011-12",
+      "qualifying_purchases": 5736,
+      "distinct_issuers": 780,
+      "distinct_insiders": 1396,
+      "median_trade_value_usd": 2129.0
+    },
+    {
+      "month": "2012-01",
+      "qualifying_purchases": 1996,
+      "distinct_issuers": 471,
+      "distinct_insiders": 841,
+      "median_trade_value_usd": 6110.0
+    },
+    {
+      "month": "2012-02",
+      "qualifying_purchases": 2386,
+      "distinct_issuers": 623,
+      "distinct_insiders": 1141,
+      "median_trade_value_usd": 10281.375
+    },
+    {
+      "month": "2012-03",
+      "qualifying_purchases": 2694,
+      "distinct_issuers": 698,
+      "distinct_insiders": 1179,
+      "median_trade_value_usd": 9600.0
+    },
+    {
+      "month": "2012-04",
+      "qualifying_purchases": 1973,
+      "distinct_issuers": 438,
+      "distinct_insiders": 848,
+      "median_trade_value_usd": 7333.125
+    },
+    {
+      "month": "2012-05",
+      "qualifying_purchases": 4922,
+      "distinct_issuers": 996,
+      "distinct_insiders": 1961,
+      "median_trade_value_usd": 10241.16
+    },
+    {
+      "month": "2012-06",
+      "qualifying_purchases": 3190,
+      "distinct_issuers": 738,
+      "distinct_insiders": 1246,
+      "median_trade_value_usd": 9901.900000000001
+    },
+    {
+      "month": "2012-07",
+      "qualifying_purchases": 1823,
+      "distinct_issuers": 412,
+      "distinct_insiders": 863,
+      "median_trade_value_usd": 11000.0
+    },
+    {
+      "month": "2012-08",
+      "qualifying_purchases": 4958,
+      "distinct_issuers": 802,
+      "distinct_insiders": 1419,
+      "median_trade_value_usd": 3845.0
+    },
+    {
+      "month": "2012-09",
+      "qualifying_purchases": 2145,
+      "distinct_issuers": 553,
+      "distinct_insiders": 889,
+      "median_trade_value_usd": 7994.79
+    },
+    {
+      "month": "2012-10",
+      "qualifying_purchases": 1899,
+      "distinct_issuers": 419,
+      "distinct_insiders": 777,
+      "median_trade_value_usd": 8350.0
+    },
+    {
+      "month": "2012-11",
+      "qualifying_purchases": 6168,
+      "distinct_issuers": 889,
+      "distinct_insiders": 1640,
+      "median_trade_value_usd": 2775.0
+    },
+    {
+      "month": "2012-12",
+      "qualifying_purchases": 3040,
+      "distinct_issuers": 731,
+      "distinct_insiders": 1265,
+      "median_trade_value_usd": 8006.25
+    },
+    {
+      "month": "2013-01",
+      "qualifying_purchases": 1746,
+      "distinct_issuers": 443,
+      "distinct_insiders": 822,
+      "median_trade_value_usd": 7500.0
+    },
+    {
+      "month": "2013-02",
+      "qualifying_purchases": 2215,
+      "distinct_issuers": 543,
+      "distinct_insiders": 936,
+      "median_trade_value_usd": 13403.0
+    },
+    {
+      "month": "2013-03",
+      "qualifying_purchases": 2462,
+      "distinct_issuers": 639,
+      "distinct_insiders": 1164,
+      "median_trade_value_usd": 10800.0
+    },
+    {
+      "month": "2013-04",
+      "qualifying_purchases": 2049,
+      "distinct_issuers": 449,
+      "distinct_insiders": 844,
+      "median_trade_value_usd": 6970.76
+    },
+    {
+      "month": "2013-05",
+      "qualifying_purchases": 3398,
+      "distinct_issuers": 763,
+      "distinct_insiders": 1376,
+      "median_trade_value_usd": 9997.380000000001
+    },
+    {
+      "month": "2013-06",
+      "qualifying_purchases": 2491,
+      "distinct_issuers": 631,
+      "distinct_insiders": 1003,
+      "median_trade_value_usd": 8561.0
+    },
+    {
+      "month": "2013-07",
+      "qualifying_purchases": 1889,
+      "distinct_issuers": 419,
+      "distinct_insiders": 879,
+      "median_trade_value_usd": 9733.5
+    },
+    {
+      "month": "2013-08",
+      "qualifying_purchases": 3289,
+      "distinct_issuers": 789,
+      "distinct_insiders": 1491,
+      "median_trade_value_usd": 11215.0
+    },
+    {
+      "month": "2013-09",
+      "qualifying_purchases": 1747,
+      "distinct_issuers": 551,
+      "distinct_insiders": 891,
+      "median_trade_value_usd": 8995.0
+    },
+    {
+      "month": "2013-10",
+      "qualifying_purchases": 1478,
+      "distinct_issuers": 408,
+      "distinct_insiders": 840,
+      "median_trade_value_usd": 16413.2
+    },
+    {
+      "month": "2013-11",
+      "qualifying_purchases": 2617,
+      "distinct_issuers": 691,
+      "distinct_insiders": 1146,
+      "median_trade_value_usd": 14999.25
+    },
+    {
+      "month": "2013-12",
+      "qualifying_purchases": 2523,
+      "distinct_issuers": 591,
+      "distinct_insiders": 1059,
+      "median_trade_value_usd": 10425.0
+    },
+    {
+      "month": "2014-01",
+      "qualifying_purchases": 1798,
+      "distinct_issuers": 379,
+      "distinct_insiders": 787,
+      "median_trade_value_usd": 6915.0
+    },
+    {
+      "month": "2014-02",
+      "qualifying_purchases": 2406,
+      "distinct_issuers": 536,
+      "distinct_insiders": 974,
+      "median_trade_value_usd": 12750.0
+    },
+    {
+      "month": "2014-03",
+      "qualifying_purchases": 2484,
+      "distinct_issuers": 575,
+      "distinct_insiders": 1045,
+      "median_trade_value_usd": 16123.32
+    },
+    {
+      "month": "2014-04",
+      "qualifying_purchases": 2087,
+      "distinct_issuers": 414,
+      "distinct_insiders": 876,
+      "median_trade_value_usd": 14544.0
+    },
+    {
+      "month": "2014-05",
+      "qualifying_purchases": 3492,
+      "distinct_issuers": 863,
+      "distinct_insiders": 1568,
+      "median_trade_value_usd": 19717.0
+    },
+    {
+      "month": "2014-06",
+      "qualifying_purchases": 2380,
+      "distinct_issuers": 585,
+      "distinct_insiders": 928,
+      "median_trade_value_usd": 13129.599999999999
+    },
+    {
+      "month": "2014-07",
+      "qualifying_purchases": 2689,
+      "distinct_issuers": 404,
+      "distinct_insiders": 870,
+      "median_trade_value_usd": 7798.999999999999
+    },
+    {
+      "month": "2014-08",
+      "qualifying_purchases": 3355,
+      "distinct_issuers": 734,
+      "distinct_insiders": 1396,
+      "median_trade_value_usd": 13496.0
+    },
+    {
+      "month": "2014-09",
+      "qualifying_purchases": 2673,
+      "distinct_issuers": 578,
+      "distinct_insiders": 1033,
+      "median_trade_value_usd": 10374.0
+    },
+    {
+      "month": "2014-10",
+      "qualifying_purchases": 2540,
+      "distinct_issuers": 459,
+      "distinct_insiders": 934,
+      "median_trade_value_usd": 13332.0
+    },
+    {
+      "month": "2014-11",
+      "qualifying_purchases": 3233,
+      "distinct_issuers": 773,
+      "distinct_insiders": 1415,
+      "median_trade_value_usd": 16161.6
+    },
+    {
+      "month": "2014-12",
+      "qualifying_purchases": 3606,
+      "distinct_issuers": 825,
+      "distinct_insiders": 1584,
+      "median_trade_value_usd": 12255.0
+    },
+    {
+      "month": "2015-01",
+      "qualifying_purchases": 2021,
+      "distinct_issuers": 397,
+      "distinct_insiders": 795,
+      "median_trade_value_usd": 9900.0
+    },
+    {
+      "month": "2015-02",
+      "qualifying_purchases": 2346,
+      "distinct_issuers": 561,
+      "distinct_insiders": 1120,
+      "median_trade_value_usd": 13760.0
+    },
+    {
+      "month": "2015-03",
+      "qualifying_purchases": 3334,
+      "distinct_issuers": 711,
+      "distinct_insiders": 1315,
+      "median_trade_value_usd": 11582.720000000001
+    },
+    {
+      "month": "2015-04",
+      "qualifying_purchases": 2075,
+      "distinct_issuers": 413,
+      "distinct_insiders": 802,
+      "median_trade_value_usd": 7345.280000000001
+    },
+    {
+      "month": "2015-05",
+      "qualifying_purchases": 3394,
+      "distinct_issuers": 799,
+      "distinct_insiders": 1437,
+      "median_trade_value_usd": 12501.0
+    },
+    {
+      "month": "2015-06",
+      "qualifying_purchases": 2840,
+      "distinct_issuers": 686,
+      "distinct_insiders": 1188,
+      "median_trade_value_usd": 11712.0
+    },
+    {
+      "month": "2015-07",
+      "qualifying_purchases": 2699,
+      "distinct_issuers": 479,
+      "distinct_insiders": 930,
+      "median_trade_value_usd": 7985.496450000001
+    },
+    {
+      "month": "2015-08",
+      "qualifying_purchases": 6380,
+      "distinct_issuers": 1111,
+      "distinct_insiders": 2164,
+      "median_trade_value_usd": 12615.0
+    },
+    {
+      "month": "2015-09",
+      "qualifying_purchases": 3504,
+      "distinct_issuers": 713,
+      "distinct_insiders": 1176,
+      "median_trade_value_usd": 10058.5
+    },
+    {
+      "month": "2015-10",
+      "qualifying_purchases": 2636,
+      "distinct_issuers": 423,
+      "distinct_insiders": 841,
+      "median_trade_value_usd": 7487.75
+    },
+    {
+      "month": "2015-11",
+      "qualifying_purchases": 3963,
+      "distinct_issuers": 814,
+      "distinct_insiders": 1491,
+      "median_trade_value_usd": 12293.300000000001
+    },
+    {
+      "month": "2015-12",
+      "qualifying_purchases": 4939,
+      "distinct_issuers": 819,
+      "distinct_insiders": 1468,
+      "median_trade_value_usd": 11190.5
+    },
+    {
+      "month": "2016-01",
+      "qualifying_purchases": 3641,
+      "distinct_issuers": 517,
+      "distinct_insiders": 987,
+      "median_trade_value_usd": 11834.880000000001
+    },
+    {
+      "month": "2016-02",
+      "qualifying_purchases": 4326,
+      "distinct_issuers": 807,
+      "distinct_insiders": 1572,
+      "median_trade_value_usd": 16952.2
+    },
+    {
+      "month": "2016-03",
+      "qualifying_purchases": 3236,
+      "distinct_issuers": 778,
+      "distinct_insiders": 1372,
+      "median_trade_value_usd": 15730.0
+    },
+    {
+      "month": "2016-04",
+      "qualifying_purchases": 2267,
+      "distinct_issuers": 381,
+      "distinct_insiders": 698,
+      "median_trade_value_usd": 3665.0
+    },
+    {
+      "month": "2016-05",
+      "qualifying_purchases": 2963,
+      "distinct_issuers": 799,
+      "distinct_insiders": 1438,
+      "median_trade_value_usd": 15707.02
+    },
+    {
+      "month": "2016-06",
+      "qualifying_purchases": 2681,
+      "distinct_issuers": 588,
+      "distinct_insiders": 1037,
+      "median_trade_value_usd": 13406.0
+    },
+    {
+      "month": "2016-07",
+      "qualifying_purchases": 1750,
+      "distinct_issuers": 309,
+      "distinct_insiders": 705,
+      "median_trade_value_usd": 6405.4400000000005
+    },
+    {
+      "month": "2016-08",
+      "qualifying_purchases": 2829,
+      "distinct_issuers": 660,
+      "distinct_insiders": 1157,
+      "median_trade_value_usd": 16723.89
+    },
+    {
+      "month": "2016-09",
+      "qualifying_purchases": 3057,
+      "distinct_issuers": 510,
+      "distinct_insiders": 860,
+      "median_trade_value_usd": 10661.76
+    },
+    {
+      "month": "2016-10",
+      "qualifying_purchases": 2171,
+      "distinct_issuers": 348,
+      "distinct_insiders": 679,
+      "median_trade_value_usd": 8089.700000000001
+    },
+    {
+      "month": "2016-11",
+      "qualifying_purchases": 3674,
+      "distinct_issuers": 748,
+      "distinct_insiders": 1343,
+      "median_trade_value_usd": 27637.92
+    },
+    {
+      "month": "2016-12",
+      "qualifying_purchases": 2099,
+      "distinct_issuers": 541,
+      "distinct_insiders": 937,
+      "median_trade_value_usd": 15542.875
+    },
+    {
+      "month": "2017-01",
+      "qualifying_purchases": 1477,
+      "distinct_issuers": 322,
+      "distinct_insiders": 621,
+      "median_trade_value_usd": 6999.61
+    },
+    {
+      "month": "2017-02",
+      "qualifying_purchases": 1777,
+      "distinct_issuers": 456,
+      "distinct_insiders": 829,
+      "median_trade_value_usd": 10910.0
+    },
+    {
+      "month": "2017-03",
+      "qualifying_purchases": 2887,
+      "distinct_issuers": 636,
+      "distinct_insiders": 1178,
+      "median_trade_value_usd": 10971.585
+    },
+    {
+      "month": "2017-04",
+      "qualifying_purchases": 1934,
+      "distinct_issuers": 319,
+      "distinct_insiders": 652,
+      "median_trade_value_usd": 5264.0
+    },
+    {
+      "month": "2017-05",
+      "qualifying_purchases": 3687,
+      "distinct_issuers": 758,
+      "distinct_insiders": 1380,
+      "median_trade_value_usd": 13335.0
+    },
+    {
+      "month": "2017-06",
+      "qualifying_purchases": 2610,
+      "distinct_issuers": 591,
+      "distinct_insiders": 997,
+      "median_trade_value_usd": 13160.0
+    },
+    {
+      "month": "2017-07",
+      "qualifying_purchases": 1500,
+      "distinct_issuers": 288,
+      "distinct_insiders": 601,
+      "median_trade_value_usd": 7210.0
+    },
+    {
+      "month": "2017-08",
+      "qualifying_purchases": 3713,
+      "distinct_issuers": 798,
+      "distinct_insiders": 1439,
+      "median_trade_value_usd": 13147.5
+    },
+    {
+      "month": "2017-09",
+      "qualifying_purchases": 1893,
+      "distinct_issuers": 464,
+      "distinct_insiders": 793,
+      "median_trade_value_usd": 10841.6
+    },
+    {
+      "month": "2017-10",
+      "qualifying_purchases": 1652,
+      "distinct_issuers": 326,
+      "distinct_insiders": 689,
+      "median_trade_value_usd": 5613.8193
+    },
+    {
+      "month": "2017-11",
+      "qualifying_purchases": 2386,
+      "distinct_issuers": 656,
+      "distinct_insiders": 1141,
+      "median_trade_value_usd": 22390.0
+    },
+    {
+      "month": "2017-12",
+      "qualifying_purchases": 2321,
+      "distinct_issuers": 605,
+      "distinct_insiders": 1001,
+      "median_trade_value_usd": 24021.1
+    },
+    {
+      "month": "2018-01",
+      "qualifying_purchases": 1444,
+      "distinct_issuers": 347,
+      "distinct_insiders": 638,
+      "median_trade_value_usd": 11033.5
+    },
+    {
+      "month": "2018-02",
+      "qualifying_purchases": 2086,
+      "distinct_issuers": 560,
+      "distinct_insiders": 981,
+      "median_trade_value_usd": 26355.239999999998
+    },
+    {
+      "month": "2018-03",
+      "qualifying_purchases": 3179,
+      "distinct_issuers": 655,
+      "distinct_insiders": 1191,
+      "median_trade_value_usd": 20837.2
+    },
+    {
+      "month": "2018-04",
+      "qualifying_purchases": 1443,
+      "distinct_issuers": 330,
+      "distinct_insiders": 638,
+      "median_trade_value_usd": 16602.4
+    },
+    {
+      "month": "2018-05",
+      "qualifying_purchases": 3178,
+      "distinct_issuers": 713,
+      "distinct_insiders": 1262,
+      "median_trade_value_usd": 24984.99
+    },
+    {
+      "month": "2018-06",
+      "qualifying_purchases": 2042,
+      "distinct_issuers": 483,
+      "distinct_insiders": 832,
+      "median_trade_value_usd": 19930.0
+    },
+    {
+      "month": "2018-07",
+      "qualifying_purchases": 1493,
+      "distinct_issuers": 337,
+      "distinct_insiders": 718,
+      "median_trade_value_usd": 17100.0
+    },
+    {
+      "month": "2018-08",
+      "qualifying_purchases": 2567,
+      "distinct_issuers": 686,
+      "distinct_insiders": 1206,
+      "median_trade_value_usd": 18905.5
+    },
+    {
+      "month": "2018-09",
+      "qualifying_purchases": 3830,
+      "distinct_issuers": 429,
+      "distinct_insiders": 837,
+      "median_trade_value_usd": 1819.7440499999998
+    },
+    {
+      "month": "2018-10",
+      "qualifying_purchases": 7249,
+      "distinct_issuers": 466,
+      "distinct_insiders": 989,
+      "median_trade_value_usd": 124.64
+    },
+    {
+      "month": "2018-11",
+      "qualifying_purchases": 7586,
+      "distinct_issuers": 833,
+      "distinct_insiders": 1600,
+      "median_trade_value_usd": 2022.5
+    },
+    {
+      "month": "2018-12",
+      "qualifying_purchases": 8564,
+      "distinct_issuers": 895,
+      "distinct_insiders": 1625,
+      "median_trade_value_usd": 2357.64
+    },
+    {
+      "month": "2019-01",
+      "qualifying_purchases": 3764,
+      "distinct_issuers": 451,
+      "distinct_insiders": 767,
+      "median_trade_value_usd": 1151.1
+    },
+    {
+      "month": "2019-02",
+      "qualifying_purchases": 1732,
+      "distinct_issuers": 422,
+      "distinct_insiders": 779,
+      "median_trade_value_usd": 11916.95
+    },
+    {
+      "month": "2019-03",
+      "qualifying_purchases": 6689,
+      "distinct_issuers": 595,
+      "distinct_insiders": 1094,
+      "median_trade_value_usd": 515.6
+    },
+    {
+      "month": "2019-04",
+      "qualifying_purchases": 3078,
+      "distinct_issuers": 296,
+      "distinct_insiders": 659,
+      "median_trade_value_usd": 1037.44
+    },
+    {
+      "month": "2019-05",
+      "qualifying_purchases": 3761,
+      "distinct_issuers": 766,
+      "distinct_insiders": 1478,
+      "median_trade_value_usd": 25590.4
+    },
+    {
+      "month": "2019-06",
+      "qualifying_purchases": 5052,
+      "distinct_issuers": 617,
+      "distinct_insiders": 1168,
+      "median_trade_value_usd": 3558.37
+    },
+    {
+      "month": "2019-07",
+      "qualifying_purchases": 3199,
+      "distinct_issuers": 342,
+      "distinct_insiders": 786,
+      "median_trade_value_usd": 1830.22
+    },
+    {
+      "month": "2019-08",
+      "qualifying_purchases": 3565,
+      "distinct_issuers": 862,
+      "distinct_insiders": 1656,
+      "median_trade_value_usd": 26335.0
+    },
+    {
+      "month": "2019-09",
+      "qualifying_purchases": 2339,
+      "distinct_issuers": 524,
+      "distinct_insiders": 909,
+      "median_trade_value_usd": 11592.6836
+    },
+    {
+      "month": "2019-10",
+      "qualifying_purchases": 1575,
+      "distinct_issuers": 313,
+      "distinct_insiders": 620,
+      "median_trade_value_usd": 11675.0
+    },
+    {
+      "month": "2019-11",
+      "qualifying_purchases": 2362,
+      "distinct_issuers": 631,
+      "distinct_insiders": 1147,
+      "median_trade_value_usd": 22329.0
+    },
+    {
+      "month": "2019-12",
+      "qualifying_purchases": 1869,
+      "distinct_issuers": 529,
+      "distinct_insiders": 873,
+      "median_trade_value_usd": 16560.0
+    },
+    {
+      "month": "2020-01",
+      "qualifying_purchases": 1285,
+      "distinct_issuers": 315,
+      "distinct_insiders": 596,
+      "median_trade_value_usd": 9942.67
+    },
+    {
+      "month": "2020-02",
+      "qualifying_purchases": 2183,
+      "distinct_issuers": 545,
+      "distinct_insiders": 1006,
+      "median_trade_value_usd": 27500.0
+    },
+    {
+      "month": "2020-03",
+      "qualifying_purchases": 7867,
+      "distinct_issuers": 1452,
+      "distinct_insiders": 3480,
+      "median_trade_value_usd": 36400.0
+    },
+    {
+      "month": "2020-04",
+      "qualifying_purchases": 1662,
+      "distinct_issuers": 405,
+      "distinct_insiders": 700,
+      "median_trade_value_usd": 15624.84
+    },
+    {
+      "month": "2020-05",
+      "qualifying_purchases": 3305,
+      "distinct_issuers": 835,
+      "distinct_insiders": 1537,
+      "median_trade_value_usd": 20250.0
+    },
+    {
+      "month": "2020-06",
+      "qualifying_purchases": 1990,
+      "distinct_issuers": 567,
+      "distinct_insiders": 982,
+      "median_trade_value_usd": 21444.165
+    },
+    {
+      "month": "2020-07",
+      "qualifying_purchases": 1445,
+      "distinct_issuers": 346,
+      "distinct_insiders": 677,
+      "median_trade_value_usd": 9361.86
+    },
+    {
+      "month": "2020-08",
+      "qualifying_purchases": 2851,
+      "distinct_issuers": 675,
+      "distinct_insiders": 1190,
+      "median_trade_value_usd": 16867.0
+    },
+    {
+      "month": "2020-09",
+      "qualifying_purchases": 2454,
+      "distinct_issuers": 573,
+      "distinct_insiders": 1012,
+      "median_trade_value_usd": 19000.0
+    },
+    {
+      "month": "2020-10",
+      "qualifying_purchases": 1456,
+      "distinct_issuers": 331,
+      "distinct_insiders": 642,
+      "median_trade_value_usd": 14936.22
+    },
+    {
+      "month": "2020-11",
+      "qualifying_purchases": 2307,
+      "distinct_issuers": 586,
+      "distinct_insiders": 967,
+      "median_trade_value_usd": 14351.3
+    },
+    {
+      "month": "2020-12",
+      "qualifying_purchases": 2080,
+      "distinct_issuers": 536,
+      "distinct_insiders": 895,
+      "median_trade_value_usd": 15850.0
+    },
+    {
+      "month": "2021-01",
+      "qualifying_purchases": 1333,
+      "distinct_issuers": 290,
+      "distinct_insiders": 593,
+      "median_trade_value_usd": 14533.3
+    },
+    {
+      "month": "2021-02",
+      "qualifying_purchases": 1598,
+      "distinct_issuers": 437,
+      "distinct_insiders": 748,
+      "median_trade_value_usd": 17118.85
+    },
+    {
+      "month": "2021-03",
+      "qualifying_purchases": 2330,
+      "distinct_issuers": 595,
+      "distinct_insiders": 1033,
+      "median_trade_value_usd": 28300.47
+    },
+    {
+      "month": "2021-04",
+      "qualifying_purchases": 1384,
+      "distinct_issuers": 330,
+      "distinct_insiders": 613,
+      "median_trade_value_usd": 9217.5
+    },
+    {
+      "month": "2021-05",
+      "qualifying_purchases": 2461,
+      "distinct_issuers": 614,
+      "distinct_insiders": 1054,
+      "median_trade_value_usd": 21775.0
+    },
+    {
+      "month": "2021-06",
+      "qualifying_purchases": 2022,
+      "distinct_issuers": 493,
+      "distinct_insiders": 852,
+      "median_trade_value_usd": 25000.0
+    },
+    {
+      "month": "2021-07",
+      "qualifying_purchases": 1586,
+      "distinct_issuers": 336,
+      "distinct_insiders": 685,
+      "median_trade_value_usd": 18800.0
+    },
+    {
+      "month": "2021-08",
+      "qualifying_purchases": 3009,
+      "distinct_issuers": 755,
+      "distinct_insiders": 1365,
+      "median_trade_value_usd": 22183.75
+    },
+    {
+      "month": "2021-09",
+      "qualifying_purchases": 2404,
+      "distinct_issuers": 529,
+      "distinct_insiders": 908,
+      "median_trade_value_usd": 14895.0
+    },
+    {
+      "month": "2021-10",
+      "qualifying_purchases": 1447,
+      "distinct_issuers": 293,
+      "distinct_insiders": 565,
+      "median_trade_value_usd": 9750.757599999999
+    },
+    {
+      "month": "2021-11",
+      "qualifying_purchases": 3098,
+      "distinct_issuers": 811,
+      "distinct_insiders": 1380,
+      "median_trade_value_usd": 23750.0
+    },
+    {
+      "month": "2021-12",
+      "qualifying_purchases": 3278,
+      "distinct_issuers": 771,
+      "distinct_insiders": 1324,
+      "median_trade_value_usd": 26500.0
+    },
+    {
+      "month": "2022-01",
+      "qualifying_purchases": 2029,
+      "distinct_issuers": 391,
+      "distinct_insiders": 737,
+      "median_trade_value_usd": 19990.0
+    },
+    {
+      "month": "2022-02",
+      "qualifying_purchases": 2352,
+      "distinct_issuers": 507,
+      "distinct_insiders": 841,
+      "median_trade_value_usd": 42017.46
+    },
+    {
+      "month": "2022-03",
+      "qualifying_purchases": 3291,
+      "distinct_issuers": 797,
+      "distinct_insiders": 1382,
+      "median_trade_value_usd": 43482.78
+    },
+    {
+      "month": "2022-04",
+      "qualifying_purchases": 1835,
+      "distinct_issuers": 380,
+      "distinct_insiders": 660,
+      "median_trade_value_usd": 25424.074999999997
+    },
+    {
+      "month": "2022-05",
+      "qualifying_purchases": 4526,
+      "distinct_issuers": 967,
+      "distinct_insiders": 1829,
+      "median_trade_value_usd": 30000.0
+    },
+    {
+      "month": "2022-06",
+      "qualifying_purchases": 3265,
+      "distinct_issuers": 722,
+      "distinct_insiders": 1150,
+      "median_trade_value_usd": 16766.75
+    },
+    {
+      "month": "2022-07",
+      "qualifying_purchases": 1388,
+      "distinct_issuers": 308,
+      "distinct_insiders": 521,
+      "median_trade_value_usd": 9985.939999999999
+    },
+    {
+      "month": "2022-08",
+      "qualifying_purchases": 3124,
+      "distinct_issuers": 651,
+      "distinct_insiders": 1142,
+      "median_trade_value_usd": 17419.48
+    },
+    {
+      "month": "2022-09",
+      "qualifying_purchases": 2934,
+      "distinct_issuers": 613,
+      "distinct_insiders": 1007,
+      "median_trade_value_usd": 13492.48
+    },
+    {
+      "month": "2022-10",
+      "qualifying_purchases": 1773,
+      "distinct_issuers": 336,
+      "distinct_insiders": 593,
+      "median_trade_value_usd": 16927.5
+    },
+    {
+      "month": "2022-11",
+      "qualifying_purchases": 3110,
+      "distinct_issuers": 666,
+      "distinct_insiders": 1120,
+      "median_trade_value_usd": 16150.625
+    },
+    {
+      "month": "2022-12",
+      "qualifying_purchases": 3504,
+      "distinct_issuers": 664,
+      "distinct_insiders": 1078,
+      "median_trade_value_usd": 12874.36
+    },
+    {
+      "month": "2023-01",
+      "qualifying_purchases": 1624,
+      "distinct_issuers": 317,
+      "distinct_insiders": 573,
+      "median_trade_value_usd": 22650.0
+    },
+    {
+      "month": "2023-02",
+      "qualifying_purchases": 1495,
+      "distinct_issuers": 388,
+      "distinct_insiders": 648,
+      "median_trade_value_usd": 14450.0
+    },
+    {
+      "month": "2023-03",
+      "qualifying_purchases": 3074,
+      "distinct_issuers": 741,
+      "distinct_insiders": 1406,
+      "median_trade_value_usd": 22552.5
+    },
+    {
+      "month": "2023-04",
+      "qualifying_purchases": 1252,
+      "distinct_issuers": 321,
+      "distinct_insiders": 578,
+      "median_trade_value_usd": 13334.849999999999
+    },
+    {
+      "month": "2023-05",
+      "qualifying_purchases": 4330,
+      "distinct_issuers": 869,
+      "distinct_insiders": 1849,
+      "median_trade_value_usd": 17207.5
+    },
+    {
+      "month": "2023-06",
+      "qualifying_purchases": 2445,
+      "distinct_issuers": 585,
+      "distinct_insiders": 889,
+      "median_trade_value_usd": 13873.142
+    },
+    {
+      "month": "2023-07",
+      "qualifying_purchases": 1217,
+      "distinct_issuers": 239,
+      "distinct_insiders": 445,
+      "median_trade_value_usd": 8465.345599999999
+    },
+    {
+      "month": "2023-08",
+      "qualifying_purchases": 2991,
+      "distinct_issuers": 673,
+      "distinct_insiders": 1115,
+      "median_trade_value_usd": 18129.199999999997
+    },
+    {
+      "month": "2023-09",
+      "qualifying_purchases": 2417,
+      "distinct_issuers": 550,
+      "distinct_insiders": 857,
+      "median_trade_value_usd": 16394.0
+    },
+    {
+      "month": "2023-10",
+      "qualifying_purchases": 1870,
+      "distinct_issuers": 342,
+      "distinct_insiders": 550,
+      "median_trade_value_usd": 14215.0
+    },
+    {
+      "month": "2023-11",
+      "qualifying_purchases": 2971,
+      "distinct_issuers": 689,
+      "distinct_insiders": 1193,
+      "median_trade_value_usd": 26916.12
+    },
+    {
+      "month": "2023-12",
+      "qualifying_purchases": 2148,
+      "distinct_issuers": 544,
+      "distinct_insiders": 792,
+      "median_trade_value_usd": 14590.740000000002
+    },
+    {
+      "month": "2024-01",
+      "qualifying_purchases": 1478,
+      "distinct_issuers": 307,
+      "distinct_insiders": 512,
+      "median_trade_value_usd": 10297.0
+    },
+    {
+      "month": "2024-02",
+      "qualifying_purchases": 1969,
+      "distinct_issuers": 473,
+      "distinct_insiders": 737,
+      "median_trade_value_usd": 17756.540800000002
+    },
+    {
+      "month": "2024-03",
+      "qualifying_purchases": 2171,
+      "distinct_issuers": 546,
+      "distinct_insiders": 830,
+      "median_trade_value_usd": 24924.9
+    },
+    {
+      "month": "2024-04",
+      "qualifying_purchases": 1268,
+      "distinct_issuers": 314,
+      "distinct_insiders": 564,
+      "median_trade_value_usd": 16575.75
+    },
+    {
+      "month": "2024-05",
+      "qualifying_purchases": 2383,
+      "distinct_issuers": 615,
+      "distinct_insiders": 1035,
+      "median_trade_value_usd": 15675.0
+    },
+    {
+      "month": "2024-06",
+      "qualifying_purchases": 1828,
+      "distinct_issuers": 503,
+      "distinct_insiders": 763,
+      "median_trade_value_usd": 15094.25
+    },
+    {
+      "month": "2024-07",
+      "qualifying_purchases": 1130,
+      "distinct_issuers": 272,
+      "distinct_insiders": 471,
+      "median_trade_value_usd": 20866.0
+    },
+    {
+      "month": "2024-08",
+      "qualifying_purchases": 2190,
+      "distinct_issuers": 585,
+      "distinct_insiders": 923,
+      "median_trade_value_usd": 20046.6
+    },
+    {
+      "month": "2024-09",
+      "qualifying_purchases": 1740,
+      "distinct_issuers": 435,
+      "distinct_insiders": 685,
+      "median_trade_value_usd": 13528.5
+    },
+    {
+      "month": "2024-10",
+      "qualifying_purchases": 1477,
+      "distinct_issuers": 297,
+      "distinct_insiders": 483,
+      "median_trade_value_usd": 16813.635000000002
+    },
+    {
+      "month": "2024-11",
+      "qualifying_purchases": 2004,
+      "distinct_issuers": 519,
+      "distinct_insiders": 837,
+      "median_trade_value_usd": 22116.0
+    },
+    {
+      "month": "2024-12",
+      "qualifying_purchases": 2536,
+      "distinct_issuers": 549,
+      "distinct_insiders": 832,
+      "median_trade_value_usd": 11285.099999999999
+    },
+    {
+      "month": "2025-01",
+      "qualifying_purchases": 1183,
+      "distinct_issuers": 292,
+      "distinct_insiders": 471,
+      "median_trade_value_usd": 19024.129999999997
+    },
+    {
+      "month": "2025-02",
+      "qualifying_purchases": 1739,
+      "distinct_issuers": 414,
+      "distinct_insiders": 695,
+      "median_trade_value_usd": 22481.27
+    },
+    {
+      "month": "2025-03",
+      "qualifying_purchases": 2403,
+      "distinct_issuers": 640,
+      "distinct_insiders": 1054,
+      "median_trade_value_usd": 26945.77
+    },
+    {
+      "month": "2025-04",
+      "qualifying_purchases": 1929,
+      "distinct_issuers": 385,
+      "distinct_insiders": 594,
+      "median_trade_value_usd": 10999.375
+    },
+    {
+      "month": "2025-05",
+      "qualifying_purchases": 2601,
+      "distinct_issuers": 656,
+      "distinct_insiders": 1062,
+      "median_trade_value_usd": 17006.75
+    },
+    {
+      "month": "2025-06",
+      "qualifying_purchases": 1803,
+      "distinct_issuers": 474,
+      "distinct_insiders": 711,
+      "median_trade_value_usd": 9081.25
+    },
+    {
+      "month": "2025-07",
+      "qualifying_purchases": 1118,
+      "distinct_issuers": 267,
+      "distinct_insiders": 471,
+      "median_trade_value_usd": 9982.8
+    },
+    {
+      "month": "2025-08",
+      "qualifying_purchases": 2206,
+      "distinct_issuers": 603,
+      "distinct_insiders": 1025,
+      "median_trade_value_usd": 29903.75
+    },
+    {
+      "month": "2025-09",
+      "qualifying_purchases": 1488,
+      "distinct_issuers": 380,
+      "distinct_insiders": 591,
+      "median_trade_value_usd": 16469.5
+    },
+    {
+      "month": "2025-10",
+      "qualifying_purchases": 1047,
+      "distinct_issuers": 298,
+      "distinct_insiders": 454,
+      "median_trade_value_usd": 16212.35
+    },
+    {
+      "month": "2025-11",
+      "qualifying_purchases": 2277,
+      "distinct_issuers": 655,
+      "distinct_insiders": 1066,
+      "median_trade_value_usd": 40000.0
+    },
+    {
+      "month": "2025-12",
+      "qualifying_purchases": 2067,
+      "distinct_issuers": 520,
+      "distinct_insiders": 809,
+      "median_trade_value_usd": 28000.000000000004
+    }
+  ],
+  "filing_lag": {
+    "histogram": [
+      {
+        "lag_days": 0,
+        "count": 76228,
+        "share": 0.1557669829904449
+      },
+      {
+        "lag_days": 1,
+        "count": 179110,
+        "share": 0.3659996893978405
+      },
+      {
+        "lag_days": 2,
+        "count": 150693,
+        "share": 0.30793138961771416
+      },
+      {
+        "lag_days": 3,
+        "count": 21889,
+        "share": 0.04472875440360299
+      },
+      {
+        "lag_days": 4,
+        "count": 6812,
+        "share": 0.013919880990330464
+      },
+      {
+        "lag_days": 5,
+        "count": 4183,
+        "share": 0.008547689692095175
+      },
+      {
+        "lag_days": 6,
+        "count": 2915,
+        "share": 0.0059566137825621404
+      },
+      {
+        "lag_days": 7,
+        "count": 2111,
+        "share": 0.0043136918336153275
+      },
+      {
+        "lag_days": 8,
+        "count": 1617,
+        "share": 0.0033042348152325838
+      },
+      {
+        "lag_days": 9,
+        "count": 1482,
+        "share": 0.003028371055148231
+      },
+      {
+        "lag_days": 10,
+        "count": 1218,
+        "share": 0.0024889041465388294
+      },
+      {
+        "lag_days": 30,
+        "count": 41114,
+        "share": 0.08401379727487474
+      }
+    ],
+    "median_days": 1.0,
+    "mean_days": 18.14017761539279,
+    "p95_days": 42.0,
+    "share_within_statutory_window": 0.8296980620059995,
+    "share_flagged_late": 0.0
+  },
+  "trade_value_usd": {
+    "p25": 1937.16,
+    "median": 11400.0,
+    "mean": 88779348050.07193,
+    "p75": 67100.0,
+    "p95": 1460419.9975
+  },
+  "ownership": {
+    "direct_count": 3745737,
+    "indirect_count": 745343,
+    "indirect_share": 0.16596074886218906
+  },
+  "joint_filings": {
+    "filings_with_multiple_owners": 65743,
+    "share": 0.02868873920184884
+  },
+  "schema_drift_notes": [
+    "AFF10B5ONE is absent from DERA archives 2011Q1\u20132022Q4 and present from 2023Q1 onward, matching the effective date of the 2022 Rule 10b5-1 amendments. Requested columns are treated as optional and absent ones filled with nulls.",
+    "The committed trade table is post-dedup; superseded_rows_removed is the SPEC \u00a75.2 count of 59,480 originals dropped when a later Form 4/A restated the same (owner, issuer, date, code, security).",
+    "Purchases filed without a usable price remain in the table and are dropped at signal construction rather than imputed (SPEC 5.2).",
+    "DERA's late-filing flag is unpopulated in this extract (share_flagged_late = 0). The statutory-window share uses computed business-day lag from transaction date to filing date."
+  ]
+}

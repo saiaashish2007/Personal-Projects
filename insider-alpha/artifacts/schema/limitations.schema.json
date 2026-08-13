@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/limitations.schema.json",
+  "title": "limitations.json",
+  "description": "Known limitations and the 'What Didn't Work' narrative. This artifact is prose-heavy on purpose: it is the content a quant researcher reads first, and it is written by hand rather than computed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "headline_verdict",
+    "limitations",
+    "what_did_not_work"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "limitations" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "headline_verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "summary"],
+      "properties": {
+        "verdict": { "enum": ["signal_persists", "signal_decayed", "inconclusive"] },
+        "summary": { "type": "string" }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "severity",
+          "category",
+          "description",
+          "direction_of_bias",
+          "mitigation",
+          "quantification"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "title": { "type": "string" },
+          "severity": { "enum": ["high", "medium", "low"] },
+          "category": { "type": "string" },
+          "description": { "type": "string" },
+          "direction_of_bias": {
+            "type": ["string", "null"],
+            "description": "Null where the bias has no clear sign."
+          },
+          "mitigation": { "type": "string" },
+          "quantification": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "what_did_not_work": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "hypothesis",
+          "what_we_did",
+          "what_happened",
+          "evidence",
+          "takeaway"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "title": { "type": "string" },
+          "hypothesis": { "type": "string" },
+          "what_we_did": { "type": "string" },
+          "what_happened": { "type": "string" },
+          "evidence": {
+            "type": "array",
+            "description": "Short label/value pairs rendered as a small table. Values are preformatted strings so units stay explicit.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["label", "value", "t_stat"],
+              "properties": {
+                "label": { "type": "string" },
+                "value": { "type": "string" },
+                "t_stat": { "type": ["number", "null"] }
+              }
+            }
+          },
+          "takeaway": { "type": "string" }
+        }
+      }
+    }
+  }
+}

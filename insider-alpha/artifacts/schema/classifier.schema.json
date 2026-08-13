@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/classifier.schema.json",
+  "title": "classifier.json",
+  "description": "Routine / opportunistic / unclassified split, its stability over time, comparison to Cohen-Malloy-Pomorski, and the post-2023 Rule 10b5-1 validation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "definition",
+    "pooled_proportions",
+    "proportions_over_time",
+    "cmp_comparison",
+    "rule_10b5_1_validation",
+    "migration"
+  ],
+  "$defs": {
+    "bucket": { "enum": ["routine", "opportunistic", "unclassified"] }
+  },
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "classifier" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "definition": {
+      "type": "string",
+      "description": "Prose statement of the classification rule as actually implemented."
+    },
+    "pooled_proportions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routine", "opportunistic", "unclassified", "n_insider_dates"],
+      "properties": {
+        "routine": { "type": "number", "minimum": 0, "maximum": 1 },
+        "opportunistic": { "type": "number", "minimum": 0, "maximum": 1 },
+        "unclassified": { "type": "number", "minimum": 0, "maximum": 1 },
+        "n_insider_dates": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "proportions_over_time": {
+      "type": "array",
+      "description": "Shares must sum to 1 within each row. Any evaluation frequency is acceptable; quarterly is typical.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "routine", "opportunistic", "unclassified", "n_insiders"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "routine": { "type": "number", "minimum": 0, "maximum": 1 },
+          "opportunistic": { "type": "number", "minimum": 0, "maximum": 1 },
+          "unclassified": { "type": "number", "minimum": 0, "maximum": 1 },
+          "n_insiders": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "cmp_comparison": {
+      "type": "array",
+      "description": "Milestone 3 exit criterion: replication proportions against CMP's published ones. Use null where CMP reports no comparable figure.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["bucket", "cmp_reported_share", "replication_share", "delta"],
+        "properties": {
+          "bucket": { "$ref": "#/$defs/bucket" },
+          "cmp_reported_share": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+          "replication_share": { "type": "number", "minimum": 0, "maximum": 1 },
+          "delta": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "rule_10b5_1_validation": {
+      "description": "Null before the pipeline computes it. Rows of the confusion matrix are the classifier label, columns are the Form 4 AFF10B5ONE checkbox; 'routine' is treated as the positive class.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "period_start",
+            "period_end",
+            "n_filings",
+            "confusion_matrix",
+            "metrics",
+            "interpretation"
+          ],
+          "properties": {
+            "period_start": { "type": "string", "format": "date" },
+            "period_end": { "type": "string", "format": "date" },
+            "n_filings": { "type": "integer", "minimum": 0 },
+            "confusion_matrix": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "routine_and_flagged",
+                "routine_not_flagged",
+                "opportunistic_and_flagged",
+                "opportunistic_not_flagged"
+              ],
+              "properties": {
+                "routine_and_flagged": { "type": "integer", "minimum": 0 },
+                "routine_not_flagged": { "type": "integer", "minimum": 0 },
+                "opportunistic_and_flagged": { "type": "integer", "minimum": 0 },
+                "opportunistic_not_flagged": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "metrics": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["accuracy", "precision", "recall", "f1", "flag_base_rate"],
+              "properties": {
+                "accuracy": { "type": "number", "minimum": 0, "maximum": 1 },
+                "precision": { "type": "number", "minimum": 0, "maximum": 1 },
+                "recall": { "type": "number", "minimum": 0, "maximum": 1 },
+                "f1": { "type": "number", "minimum": 0, "maximum": 1 },
+                "flag_base_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            },
+            "interpretation": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "migration": {
+      "type": "array",
+      "description": "Year-over-year bucket transitions. Empty array is acceptable.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "count", "share"],
+        "properties": {
+          "from": { "$ref": "#/$defs/bucket" },
+          "to": { "$ref": "#/$defs/bucket" },
+          "count": { "type": "integer", "minimum": 0 },
+          "share": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}

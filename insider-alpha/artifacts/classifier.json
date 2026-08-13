@@ -1,0 +1,209 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "classifier",
+  "generated_at": "2026-08-12T17:11:07Z",
+  "data_status": "real",
+  "notes": "pooled_proportions and proportions_over_time count insiders with any prior filing history at each evaluation date; cmp_comparison is a share of filed transactions over the 2014-2025 sample, which is the base CMP report. The two differ sharply because most insiders file once or twice and never become classifiable, while classified insiders trade far more often. CMP report their split within the classified universe (54.8% routine / 45.2% opportunistic) and note that universe is about one third of all insider transactions; their shares here are rescaled onto the all-trades base so the three buckets are comparable. Within the classified universe this replication gives 48.7% routine against CMP's 54.8%.",
+  "definition": "An insider k is routine at date t if there is a calendar month m in which k transacted in each of the three consecutive years prior to t, using only trades filed before t. An insider who traded in each of those three years with no such month is opportunistic; an insider without a trade in every one of the three years is unclassified rather than forced into either bucket. The pattern is measured over open-market transactions (codes P and S) only.",
+  "pooled_proportions": {
+    "routine": 0.029762752690400032,
+    "opportunistic": 0.06169789818567969,
+    "unclassified": 0.9085393491239203,
+    "n_insider_dates": 926628
+  },
+  "proportions_over_time": [
+    {
+      "date": "2012-01-01",
+      "routine": 0.0004268214605830381,
+      "opportunistic": 0.0008109607751077725,
+      "unclassified": 0.9987622177643092,
+      "n_insiders": 23429
+    },
+    {
+      "date": "2013-01-01",
+      "routine": 0.0024261911721718795,
+      "opportunistic": 0.009909383221280328,
+      "unclassified": 0.9876644256065478,
+      "n_insiders": 34210
+    },
+    {
+      "date": "2014-01-01",
+      "routine": 0.05733399288625068,
+      "opportunistic": 0.128353708807387,
+      "unclassified": 0.8143122983063623,
+      "n_insiders": 42453
+    },
+    {
+      "date": "2015-01-01",
+      "routine": 0.05032513429459994,
+      "opportunistic": 0.1168665939658306,
+      "unclassified": 0.8328082717395694,
+      "n_insiders": 49518
+    },
+    {
+      "date": "2016-01-01",
+      "routine": 0.04570893843689827,
+      "opportunistic": 0.10147744245892494,
+      "unclassified": 0.8528136191041767,
+      "n_insiders": 55569
+    },
+    {
+      "date": "2017-01-01",
+      "routine": 0.0381535718413102,
+      "opportunistic": 0.08573409717521586,
+      "unclassified": 0.876112330983474,
+      "n_insiders": 60571
+    },
+    {
+      "date": "2018-01-01",
+      "routine": 0.034985600438843766,
+      "opportunistic": 0.07582245112529903,
+      "unclassified": 0.8891919484358571,
+      "n_insiders": 65627
+    },
+    {
+      "date": "2019-01-01",
+      "routine": 0.029707748428030034,
+      "opportunistic": 0.06796020041729947,
+      "unclassified": 0.9023320511546705,
+      "n_insiders": 70453
+    },
+    {
+      "date": "2020-01-01",
+      "routine": 0.02924662923596015,
+      "opportunistic": 0.060587066401717724,
+      "unclassified": 0.9101663043623222,
+      "n_insiders": 74983
+    },
+    {
+      "date": "2021-01-01",
+      "routine": 0.026264822381327237,
+      "opportunistic": 0.056415638939910785,
+      "unclassified": 0.9173195386787619,
+      "n_insiders": 80031
+    },
+    {
+      "date": "2022-01-01",
+      "routine": 0.02602779554573472,
+      "opportunistic": 0.05134616502878409,
+      "unclassified": 0.9226260394254812,
+      "n_insiders": 85985
+    },
+    {
+      "date": "2023-01-01",
+      "routine": 0.02386793078300073,
+      "opportunistic": 0.04381312294194347,
+      "unclassified": 0.9323189462750558,
+      "n_insiders": 90498
+    },
+    {
+      "date": "2024-01-01",
+      "routine": 0.023979548719682244,
+      "opportunistic": 0.040701850756359334,
+      "unclassified": 0.9353186005239584,
+      "n_insiders": 94664
+    },
+    {
+      "date": "2025-01-01",
+      "routine": 0.023895698368766285,
+      "opportunistic": 0.03740989689467441,
+      "unclassified": 0.9386944047365593,
+      "n_insiders": 98637
+    }
+  ],
+  "cmp_comparison": [
+    {
+      "bucket": "routine",
+      "cmp_reported_share": 0.1827,
+      "replication_share": 0.1235271801505002,
+      "delta": -0.0592
+    },
+    {
+      "bucket": "opportunistic",
+      "cmp_reported_share": 0.1506,
+      "replication_share": 0.1303418478686081,
+      "delta": -0.0203
+    },
+    {
+      "bucket": "unclassified",
+      "cmp_reported_share": 0.6667,
+      "replication_share": 0.7461309719808917,
+      "delta": 0.0795
+    }
+  ],
+  "rule_10b5_1_validation": {
+    "period_start": "2023-01-01",
+    "period_end": "2025-12-31",
+    "n_filings": 106487,
+    "confusion_matrix": {
+      "routine_and_flagged": 38043,
+      "routine_not_flagged": 31528,
+      "opportunistic_and_flagged": 14380,
+      "opportunistic_not_flagged": 22536
+    },
+    "metrics": {
+      "accuracy": 0.5688863429338793,
+      "precision": 0.5468226703655259,
+      "recall": 0.7256929210461057,
+      "f1": 0.623686410807089,
+      "flag_base_rate": 0.49229483411120606
+    },
+    "interpretation": "Open-market trades filed from 2023, when the checkbox first existed, so the classifier never saw this label. Routine-labelled trades are filed under a pre-scheduled 10b5-1 plan 54.7% of the time against 39.0% for opportunistic ones (odds ratio 1.89); restricted to open-market purchases, the subset the signal actually trades, the rates are 13.3% and 3.5%. The gap survives collapsing to one observation per insider-year, so it is not an artifact of a few prolific sellers. Agreement is directional rather than exact: precision and recall near 0.6 mean the behavioral proxy and the checkbox disagree on a large minority of trades, which is the measurement error the pre-2023 sample carries silently."
+  },
+  "migration": [
+    {
+      "from": "routine",
+      "to": "routine",
+      "count": 14546,
+      "share": 0.576718737610023
+    },
+    {
+      "from": "routine",
+      "to": "opportunistic",
+      "count": 4753,
+      "share": 0.18844659424312107
+    },
+    {
+      "from": "routine",
+      "to": "unclassified",
+      "count": 5923,
+      "share": 0.2348346681468559
+    },
+    {
+      "from": "opportunistic",
+      "to": "routine",
+      "count": 5186,
+      "share": 0.09696901703408688
+    },
+    {
+      "from": "opportunistic",
+      "to": "opportunistic",
+      "count": 27224,
+      "share": 0.5090405938557618
+    },
+    {
+      "from": "opportunistic",
+      "to": "unclassified",
+      "count": 21071,
+      "share": 0.3939903891101513
+    },
+    {
+      "from": "unclassified",
+      "to": "routine",
+      "count": 7819,
+      "share": 0.010435239854368413
+    },
+    {
+      "from": "unclassified",
+      "to": "opportunistic",
+      "count": 25111,
+      "share": 0.033513148482292525
+    },
+    {
+      "from": "unclassified",
+      "to": "unclassified",
+      "count": 716358,
+      "share": 0.9560516116633391
+    }
+  ]
+}

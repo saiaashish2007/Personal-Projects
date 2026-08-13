@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/robustness.schema.json",
+  "title": "robustness.json",
+  "description": "The SPEC section 12 robustness battery: cut grid, parameter sweep surface, signal randomization test, bootstrap intervals, and the specification count used for multiple-testing haircuts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "baseline_id",
+    "grid",
+    "parameter_sweep",
+    "randomization",
+    "bootstrap",
+    "multiple_testing"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "robustness" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "baseline_id": { "type": "string", "description": "Must match one grid row id." },
+    "grid": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "family",
+          "label",
+          "description",
+          "n_months",
+          "ann_return",
+          "sharpe",
+          "sharpe_ci_low",
+          "sharpe_ci_high",
+          "alpha_ann_bps",
+          "alpha_t_stat",
+          "delta_alpha_vs_baseline_bps"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "family": {
+            "enum": [
+              "headline",
+              "subperiod",
+              "event_exclusion",
+              "cap_tercile",
+              "sector_exclusion",
+              "signal_definition"
+            ],
+            "description": "Groups rows into sections in the dashboard table."
+          },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "n_months": { "type": "integer", "minimum": 1 },
+          "ann_return": { "type": "number" },
+          "sharpe": { "type": "number" },
+          "sharpe_ci_low": { "type": ["number", "null"] },
+          "sharpe_ci_high": { "type": ["number", "null"] },
+          "alpha_ann_bps": { "type": "number" },
+          "alpha_t_stat": { "type": "number" },
+          "delta_alpha_vs_baseline_bps": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "parameter_sweep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric",
+        "x_param",
+        "x_label",
+        "x_values",
+        "y_param",
+        "y_label",
+        "y_values",
+        "cells",
+        "assessment"
+      ],
+      "properties": {
+        "metric": { "type": "string" },
+        "x_param": { "type": "string" },
+        "x_label": { "type": "string" },
+        "x_values": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+        "y_param": { "type": "string" },
+        "y_label": { "type": "string" },
+        "y_values": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+        "cells": {
+          "type": "array",
+          "description": "One entry per (x, y) pair. Missing pairs render as blank cells.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y", "value", "t_stat"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "value": { "type": "number" },
+              "t_stat": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "assessment": {
+          "type": "string",
+          "description": "Plateau vs. spike reading, in prose."
+        }
+      }
+    },
+    "randomization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "n_draws",
+        "statistic",
+        "observed",
+        "null_mean",
+        "null_std",
+        "percentile",
+        "p_value",
+        "histogram"
+      ],
+      "properties": {
+        "n_draws": { "type": "integer", "minimum": 1 },
+        "statistic": { "type": "string" },
+        "observed": { "type": "number" },
+        "null_mean": { "type": "number" },
+        "null_std": { "type": "number", "minimum": 0 },
+        "percentile": { "type": "number", "minimum": 0, "maximum": 1 },
+        "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["bin_center", "count"],
+            "properties": {
+              "bin_center": { "type": "number" },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "bootstrap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "statistic",
+          "point_estimate",
+          "ci_low",
+          "ci_high",
+          "ci_level",
+          "n_resamples",
+          "method"
+        ],
+        "properties": {
+          "statistic": { "type": "string" },
+          "point_estimate": { "type": "number" },
+          "ci_low": { "type": "number" },
+          "ci_high": { "type": "number" },
+          "ci_level": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+          "n_resamples": { "type": "integer", "minimum": 1 },
+          "method": { "type": "string" }
+        }
+      }
+    },
+    "multiple_testing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n_specifications_tested", "deflated_sharpe", "haircut_note"],
+      "properties": {
+        "n_specifications_tested": { "type": "integer", "minimum": 1 },
+        "deflated_sharpe": { "type": ["number", "null"] },
+        "haircut_note": { "type": "string" }
+      }
+    }
+  }
+}

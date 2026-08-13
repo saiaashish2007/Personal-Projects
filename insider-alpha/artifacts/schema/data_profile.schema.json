@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/data_profile.schema.json",
+  "title": "data_profile.json",
+  "description": "Descriptive statistics on the parsed Form 4 transaction table (milestone 1 output).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "coverage",
+    "totals",
+    "transaction_codes",
+    "event_density",
+    "filing_lag",
+    "trade_value_usd",
+    "ownership",
+    "joint_filings",
+    "schema_drift_notes"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "data_profile" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transactions",
+        "filings",
+        "distinct_issuers",
+        "distinct_insiders",
+        "open_market_purchases",
+        "superseded_rows_removed",
+        "dropped_missing_price"
+      ],
+      "properties": {
+        "transactions": { "type": "integer", "minimum": 0 },
+        "filings": { "type": "integer", "minimum": 0 },
+        "distinct_issuers": { "type": "integer", "minimum": 0 },
+        "distinct_insiders": { "type": "integer", "minimum": 0 },
+        "open_market_purchases": { "type": "integer", "minimum": 0 },
+        "superseded_rows_removed": { "type": "integer", "minimum": 0 },
+        "dropped_missing_price": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "transaction_codes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "label", "count", "share", "included_in_signal"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1, "maxLength": 2 },
+          "label": { "type": "string" },
+          "count": { "type": "integer", "minimum": 0 },
+          "share": { "type": "number", "minimum": 0, "maximum": 1 },
+          "included_in_signal": { "type": "boolean" }
+        }
+      }
+    },
+    "event_density": {
+      "type": "array",
+      "description": "One row per calendar month over the sample.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "month",
+          "qualifying_purchases",
+          "distinct_issuers",
+          "distinct_insiders",
+          "median_trade_value_usd"
+        ],
+        "properties": {
+          "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+          "qualifying_purchases": { "type": "integer", "minimum": 0 },
+          "distinct_issuers": { "type": "integer", "minimum": 0 },
+          "distinct_insiders": { "type": "integer", "minimum": 0 },
+          "median_trade_value_usd": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "filing_lag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "histogram",
+        "median_days",
+        "mean_days",
+        "p95_days",
+        "share_within_statutory_window",
+        "share_flagged_late"
+      ],
+      "properties": {
+        "histogram": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lag_days", "count", "share"],
+            "properties": {
+              "lag_days": { "type": "integer", "minimum": 0 },
+              "count": { "type": "integer", "minimum": 0 },
+              "share": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "median_days": { "type": "number", "minimum": 0 },
+        "mean_days": { "type": "number", "minimum": 0 },
+        "p95_days": { "type": "number", "minimum": 0 },
+        "share_within_statutory_window": { "type": "number", "minimum": 0, "maximum": 1 },
+        "share_flagged_late": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "trade_value_usd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p25", "median", "mean", "p75", "p95"],
+      "properties": {
+        "p25": { "type": "number" },
+        "median": { "type": "number" },
+        "mean": { "type": "number" },
+        "p75": { "type": "number" },
+        "p95": { "type": "number" }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direct_count", "indirect_count", "indirect_share"],
+      "properties": {
+        "direct_count": { "type": "integer", "minimum": 0 },
+        "indirect_count": { "type": "integer", "minimum": 0 },
+        "indirect_share": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "joint_filings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filings_with_multiple_owners", "share"],
+      "properties": {
+        "filings_with_multiple_owners": { "type": "integer", "minimum": 0 },
+        "share": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "schema_drift_notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

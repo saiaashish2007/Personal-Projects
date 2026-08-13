@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from insider_alpha.utils import with_columns
+
 log = logging.getLogger(__name__)
 
 # DERA writes dates as 31-JAN-2024.
@@ -95,18 +97,6 @@ def _read_tsv(zf: zipfile.ZipFile, name: str, usecols: list[str]) -> pd.DataFram
     # Detach from the reader's block manager so downstream column building does not
     # trip pandas copy-on-write chained-assignment warnings.
     return frame[usecols].copy()
-
-
-def with_columns(df: pd.DataFrame, **columns: pd.Series) -> pd.DataFrame:
-    """Attach derived columns without going through ``__setitem__``.
-
-    Under pandas 2.3 copy-on-write, both ``df[col] = ...`` and ``.assign()`` raise a
-    spurious ChainedAssignmentError on any frame produced by a filter or merge, because
-    the internal refcount heuristic cannot tell an owned temporary from an aliased view.
-    Building the new columns separately and concatenating once sidesteps that entirely
-    and is also a single allocation rather than one per column.
-    """
-    return pd.concat([df, pd.DataFrame(columns, index=df.index)], axis=1)
 
 
 def _parse_date(series: pd.Series) -> pd.Series:

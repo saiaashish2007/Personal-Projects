@@ -1,0 +1,267 @@
+{
+  "schema_version": "1.0.0",
+  "artifact": "attribution",
+  "generated_at": "2026-08-13T16:40:10Z",
+  "data_status": "real",
+  "notes": "FF5+UMD regressions on the stored monthly books. Alpha is annualized basis points with Newey-West HAC standard errors (6 lags for the three-month overlap). Primary is opp_etf_3m net. Existing classifier/ic/backtest/costs artifacts were not rewritten.",
+  "primary_regression_id": "opp_etf_3m_net",
+  "regressions": [
+    {
+      "id": "opp_etf_3m_net",
+      "label": "Primary variant, net of costs",
+      "description": "Monthly excess returns of the opportunistic, sector-ETF-hedged three-month overlapping book, net of the explicit cost model, regressed on Fama-French 5 plus momentum.",
+      "dependent_variable": "opp_etf_3m net monthly excess return",
+      "alpha_ann_bps": -340.8029047933105,
+      "alpha_std_error_bps": 403.4986694321041,
+      "alpha_t_stat": -0.8446196496086755,
+      "alpha_p_value": 0.39979577364181806,
+      "loadings": [
+        {
+          "factor": "MKT",
+          "label": "Market excess return",
+          "beta": -0.0387595932607097,
+          "std_error": 0.08071091416134082,
+          "t_stat": -0.4802274099290886,
+          "p_value": 0.6318315891032542
+        },
+        {
+          "factor": "SMB",
+          "label": "Small minus big",
+          "beta": 0.6898202804297817,
+          "std_error": 0.18592160921692116,
+          "t_stat": 3.7102749020687775,
+          "p_value": 0.0003000305009708216
+        },
+        {
+          "factor": "HML",
+          "label": "High minus low",
+          "beta": 0.09677807997143617,
+          "std_error": 0.13526731152591398,
+          "t_stat": 0.7154579985342269,
+          "p_value": 0.47554365615423577
+        },
+        {
+          "factor": "RMW",
+          "label": "Robust minus weak",
+          "beta": -0.24096151674412725,
+          "std_error": 0.20635713617611778,
+          "t_stat": -1.1676917077317646,
+          "p_value": 0.24495934175414147
+        },
+        {
+          "factor": "CMA",
+          "label": "Conservative minus aggressive",
+          "beta": -0.2657828834120216,
+          "std_error": 0.2239797827900509,
+          "t_stat": -1.186637829991804,
+          "p_value": 0.23742418750139144
+        },
+        {
+          "factor": "UMD",
+          "label": "Momentum",
+          "beta": -0.22275583676131294,
+          "std_error": 0.1010837155142556,
+          "t_stat": -2.203676780459244,
+          "p_value": 0.02921718375229133
+        }
+      ],
+      "r_squared": 0.32530317949337384,
+      "adj_r_squared": 0.2957544136317698,
+      "n_months": 144,
+      "newey_west_lags": 6
+    },
+    {
+      "id": "opp_etf_3m_gross",
+      "label": "Primary variant, gross of costs",
+      "description": "Identical FF5+UMD regression on gross returns of opp_etf_3m, shown so the cost drag on residual alpha is explicit.",
+      "dependent_variable": "opp_etf_3m gross monthly excess return",
+      "alpha_ann_bps": -255.98515056861297,
+      "alpha_std_error_bps": 404.4439137475694,
+      "alpha_t_stat": -0.6329311478485595,
+      "alpha_p_value": 0.5278336699303317,
+      "loadings": [
+        {
+          "factor": "MKT",
+          "label": "Market excess return",
+          "beta": -0.03863782324316245,
+          "std_error": 0.08066967273174915,
+          "t_stat": -0.4789634311725151,
+          "p_value": 0.6327282299238142
+        },
+        {
+          "factor": "SMB",
+          "label": "Small minus big",
+          "beta": 0.6901979952183319,
+          "std_error": 0.18596438816667346,
+          "t_stat": 3.711452509927499,
+          "p_value": 0.00029876566006616854
+        },
+        {
+          "factor": "HML",
+          "label": "High minus low",
+          "beta": 0.09665884108022721,
+          "std_error": 0.13546043203114633,
+          "t_stat": 0.7135577498970511,
+          "p_value": 0.4767144973198125
+        },
+        {
+          "factor": "RMW",
+          "label": "Robust minus weak",
+          "beta": -0.241084576176964,
+          "std_error": 0.20632949336864018,
+          "t_stat": -1.168444570094632,
+          "p_value": 0.24465671675548947
+        },
+        {
+          "factor": "CMA",
+          "label": "Conservative minus aggressive",
+          "beta": -0.26586237116912564,
+          "std_error": 0.2241917218808012,
+          "t_stat": -1.1858705974455204,
+          "p_value": 0.23772607477168825
+        },
+        {
+          "factor": "UMD",
+          "label": "Momentum",
+          "beta": -0.22251696899484505,
+          "std_error": 0.10100739724414781,
+          "t_stat": -2.2029769607565775,
+          "p_value": 0.029267608793088637
+        }
+      ],
+      "r_squared": 0.32528936118839247,
+      "adj_r_squared": 0.2957399901455483,
+      "n_months": 144,
+      "newey_west_lags": 6
+    },
+    {
+      "id": "opp_spread_3m_net",
+      "label": "Quintile spread, net of costs",
+      "description": "Dollar-neutral long top / short bottom quintile of nonzero opportunistic scores, net of the explicit cost model. The short leg is as thin as the long and has no borrow cost.",
+      "dependent_variable": "opp_spread_3m net monthly excess return",
+      "alpha_ann_bps": -305.0413961585773,
+      "alpha_std_error_bps": 550.2636677347015,
+      "alpha_t_stat": -0.554354964801432,
+      "alpha_p_value": 0.5802397461887174,
+      "loadings": [
+        {
+          "factor": "MKT",
+          "label": "Market excess return",
+          "beta": 0.05714384914511599,
+          "std_error": 0.09813810354090734,
+          "t_stat": 0.5822799410556825,
+          "p_value": 0.5613351750415552
+        },
+        {
+          "factor": "SMB",
+          "label": "Small minus big",
+          "beta": 0.5513044994130485,
+          "std_error": 0.2129457542800109,
+          "t_stat": 2.588943373287998,
+          "p_value": 0.010666306826951518
+        },
+        {
+          "factor": "HML",
+          "label": "High minus low",
+          "beta": -0.22544282891719886,
+          "std_error": 0.23262059243406444,
+          "t_stat": -0.9691439032040979,
+          "p_value": 0.3341812411800894
+        },
+        {
+          "factor": "RMW",
+          "label": "Robust minus weak",
+          "beta": -0.24962531070498553,
+          "std_error": 0.3006443896460699,
+          "t_stat": -0.8303009113153718,
+          "p_value": 0.4078132364089605
+        },
+        {
+          "factor": "CMA",
+          "label": "Conservative minus aggressive",
+          "beta": -0.1614433319926277,
+          "std_error": 0.3083660449027075,
+          "t_stat": -0.5235444519955647,
+          "p_value": 0.601441272943205
+        },
+        {
+          "factor": "UMD",
+          "label": "Momentum",
+          "beta": 0.0639414146642743,
+          "std_error": 0.1619208732218131,
+          "t_stat": 0.39489297081965385,
+          "p_value": 0.6935360057422353
+        }
+      ],
+      "r_squared": 0.12659917790723108,
+      "adj_r_squared": 0.0883480470126573,
+      "n_months": 144,
+      "newey_west_lags": 6
+    },
+    {
+      "id": "all_etf_3m_net",
+      "label": "Filter off, net of costs",
+      "description": "Same ETF-hedged three-month construction on every open-market purchase, routine and opportunistic alike. The alpha gap versus opp_etf_3m_net is what the CMP filter is worth in residual space.",
+      "dependent_variable": "all_etf_3m net monthly excess return",
+      "alpha_ann_bps": -101.62285266362305,
+      "alpha_std_error_bps": 236.42094132288815,
+      "alpha_t_stat": -0.4298386263712285,
+      "alpha_p_value": 0.6679883535214224,
+      "loadings": [
+        {
+          "factor": "MKT",
+          "label": "Market excess return",
+          "beta": 0.012709162619764819,
+          "std_error": 0.0848508559019956,
+          "t_stat": 0.1497823738448101,
+          "p_value": 0.8811565975558145
+        },
+        {
+          "factor": "SMB",
+          "label": "Small minus big",
+          "beta": 0.7912667841819756,
+          "std_error": 0.08994411322778471,
+          "t_stat": 8.797315975288805,
+          "p_value": 5.322792141208796e-15
+        },
+        {
+          "factor": "HML",
+          "label": "High minus low",
+          "beta": 0.1300680599232522,
+          "std_error": 0.09398338469034703,
+          "t_stat": 1.3839473897625163,
+          "p_value": 0.16862506300356173
+        },
+        {
+          "factor": "RMW",
+          "label": "Robust minus weak",
+          "beta": -0.15205184820521445,
+          "std_error": 0.13944469443452445,
+          "t_stat": -1.090409705595573,
+          "p_value": 0.2774468451586524
+        },
+        {
+          "factor": "CMA",
+          "label": "Conservative minus aggressive",
+          "beta": -0.25633005670711606,
+          "std_error": 0.1438527498518894,
+          "t_stat": -1.7818919483362894,
+          "p_value": 0.07698213915530094
+        },
+        {
+          "factor": "UMD",
+          "label": "Momentum",
+          "beta": -0.15450754579232104,
+          "std_error": 0.06286753766128181,
+          "t_stat": -2.4576681629361397,
+          "p_value": 0.015233016618619625
+        }
+      ],
+      "r_squared": 0.5720782049034854,
+      "adj_r_squared": 0.5533371043883095,
+      "n_months": 144,
+      "newey_west_lags": 6
+    }
+  ],
+  "interpretation": "Residual alpha is -341 bps/year (t = -0.84) and is not distinguishable from zero. SMB beta is +0.69 (t = 3.71) and HML is +0.10 (t = 0.72). The book is not a clean small-cap-value clone. Gross of costs the residual is -256 bps (t = -0.63); costs do not create the hole. The filter-off twin all_etf_3m_net has residual -102 bps (t = -0.43), so the CMP split does not earn its keep after factors either. The raw quintile spread is -305 bps (t = -0.55). Market beta is -0.04 (t = -0.48) and momentum is -0.22 (t = -2.20). R\u00b2 = 0.33 on 144 months."
+}

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://insider-alpha/schema/ic.schema.json",
+  "title": "ic.json",
+  "description": "Information coefficient analysis, reported twice: once with the opportunistic filter applied and once without. The delta between the two arms is the headline research result, so both arms are required.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact",
+    "generated_at",
+    "data_status",
+    "notes",
+    "arms",
+    "headline",
+    "go_no_go"
+  ],
+  "$defs": {
+    "arm_name": { "enum": ["opportunistic", "all_insiders"] }
+  },
+  "properties": {
+    "schema_version": { "type": "string" },
+    "artifact": { "const": "ic" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "data_status": { "enum": ["real", "placeholder"] },
+    "notes": { "type": ["string", "null"] },
+    "arms": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Exactly two entries, one per arm. Order is not significant; consumers key on `arm`.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["arm", "label", "by_horizon", "time_series", "quantiles"],
+        "properties": {
+          "arm": { "$ref": "#/$defs/arm_name" },
+          "label": { "type": "string" },
+          "by_horizon": {
+            "type": "array",
+            "minItems": 1,
+            "description": "One row per forward-return horizon. Horizons 1, 5, 21, 63, 126 and 252 trading days are expected.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "horizon_days",
+                "mean_ic",
+                "ic_std",
+                "ic_ir",
+                "t_stat_newey_west",
+                "newey_west_lags",
+                "p_value",
+                "n_periods",
+                "mean_cross_section_size"
+              ],
+              "properties": {
+                "horizon_days": { "type": "integer", "minimum": 1 },
+                "mean_ic": { "type": "number", "minimum": -1, "maximum": 1 },
+                "ic_std": { "type": "number", "minimum": 0 },
+                "ic_ir": { "type": "number" },
+                "t_stat_newey_west": { "type": "number" },
+                "newey_west_lags": { "type": "integer", "minimum": 0 },
+                "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+                "n_periods": { "type": "integer", "minimum": 1 },
+                "mean_cross_section_size": { "type": "number", "minimum": 0 }
+              }
+            }
+          },
+          "time_series": {
+            "type": "array",
+            "description": "Cross-sectional IC at each rebalance date. Only the horizons worth charting need be included; 21 and 63 days at minimum.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["horizon_days", "points"],
+              "properties": {
+                "horizon_days": { "type": "integer", "minimum": 1 },
+                "points": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["date", "ic", "n"],
+                    "properties": {
+                      "date": { "type": "string", "format": "date" },
+                      "ic": { "type": "number", "minimum": -1, "maximum": 1 },
+                      "n": { "type": "integer", "minimum": 0 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "quantiles": {
+            "type": "array",
+            "description": "Quintile sorts. Five buckets, numbered 1 (lowest signal) to 5 (highest).",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "horizon_days",
+                "buckets",
+                "spread_bps",
+                "spread_t_stat",
+                "monotonic",
+                "spearman_rank_of_means"
+              ],
+              "properties": {
+                "horizon_days": { "type": "integer", "minimum": 1 },
+                "buckets": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["quantile", "mean_forward_return_bps", "std_error_bps", "n_obs"],
+                    "properties": {
+                      "quantile": { "type": "integer", "minimum": 1 },
+                      "mean_forward_return_bps": { "type": "number" },
+                      "std_error_bps": { "type": "number", "minimum": 0 },
+                      "n_obs": { "type": "integer", "minimum": 0 }
+                    }
+                  }
+                },
+                "spread_bps": { "type": "number" },
+                "spread_t_stat": { "type": "number" },
+                "monotonic": { "type": "boolean" },
+                "spearman_rank_of_means": { "type": "number", "minimum": -1, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "headline": {
+      "type": "array",
+      "description": "Precomputed side-by-side comparison so the dashboard does not have to join the two arms itself.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "horizon_days",
+          "opportunistic_mean_ic",
+          "opportunistic_t_stat",
+          "all_insiders_mean_ic",
+          "all_insiders_t_stat",
+          "delta_ic",
+          "delta_t_stat"
+        ],
+        "properties": {
+          "horizon_days": { "type": "integer", "minimum": 1 },
+          "opportunistic_mean_ic": { "type": "number" },
+          "opportunistic_t_stat": { "type": "number" },
+          "all_insiders_mean_ic": { "type": "number" },
+          "all_insiders_t_stat": { "type": "number" },
+          "delta_ic": { "type": "number" },
+          "delta_t_stat": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "go_no_go": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criterion", "horizons_evaluated", "passed", "verdict"],
+      "properties": {
+        "criterion": { "type": "string" },
+        "horizons_evaluated": { "type": "array", "items": { "type": "integer" } },
+        "passed": { "type": "boolean" },
+        "verdict": { "type": "string" }
+      }
+    }
+  }
+}

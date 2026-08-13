@@ -1,6 +1,6 @@
 # Opportunistic Insider Alpha — Research Specification
 
-**Status:** Draft for review (pre-implementation)
+**Status:** Milestones 1–6 complete. Decay study — IC gate failed; residual FF5+UMD alpha −341 bps/year.
 **Author:** Sai Bharadwaj
 **Universe:** Top 1500 US common stocks by market cap
 **Sample:** 2014-01-01 → 2025-12-31 (Form 4 history pulled from 2011 for classification burn-in)
@@ -68,10 +68,48 @@ describes the mitigation and the expected direction of the bias.
 | Dataset | Source | Cost | Point-in-time? |
 |---|---|---|---|
 | Form 4 filings | SEC DERA Insider Transactions Data Sets (quarterly bulk) | Free | Yes — filing date stamped |
-| Daily OHLCV | yfinance / Stooq | Free | Partial (survivorship) |
+| Daily OHLCV | yfinance | Free | Partial (survivorship) |
 | Shares outstanding | SEC XBRL `companyfacts` | Free | Yes |
 | Fama-French 5 + UMD | Ken French Data Library | Free | Yes |
 | Sector mapping | SIC code from EDGAR submissions | Free | Yes |
+
+Stooq was the intended price source, being the one free provider that retains delisted
+symbols. Its bulk history is behind a paid tier and its per-symbol endpoint is gated by a
+JavaScript proof-of-work challenge, so the project runs on yfinance and treats the
+resulting survivorship hole as a measured quantity rather than a caveat (§13).
+
+### 4.2 Checking a price panel that has no second opinion
+
+Prices arrive split-adjusted and are run backwards through the vendor's own split history
+to recover what actually printed. That reconstruction is only as good as the split
+history, and where the history is incomplete the failure is silent: the series stays
+smooth, plausible, and wrong. Two independent checks catch it.
+
+**Insider transaction prices.** Every open-market Form 4 reports the price per share
+actually paid, filed within two business days and owing nothing to any market data
+vendor. Matched against the panel on the same date — routed through the point-in-time
+ticker map, so a reassigned symbol is not mistaken for a pricing error — they agree to a
+median of 0.1%. Where they disagree they disagree by a clean multiple, which is what a
+missing corporate action looks like: Booking Holdings prices at a twenty-fifth of the
+market it traded in.
+
+**Unexplained overnight jumps.** Names no insider trades cannot be checked that way. For
+those, a jump surviving in the vendor's *split-adjusted* series is one the vendor never
+recorded — Cenntro Electric moves a hundred-fold overnight and enters the universe at a
+$253 billion valuation. The test must run on the adjusted series and not the
+reconstructed one, where every genuine split is a discontinuity by design and the same
+rule would throw out Apple.
+
+Insider evidence outranks the jump heuristic where both apply, since a stock can
+genuinely move five-fold in a day and contemporaneous insider fills are direct evidence
+that the series is sound.
+
+**Share counts get the same treatment.** XBRL carries scale errors that no price screen
+can see — BioNTech reports 241 billion shares against a true count near 240 million — so
+counts are compared against the issuer's own filing history and dropped when orders of
+magnitude out, with a band wide enough to pass a real 20-for-1 split. As a backstop for
+issuers with neither insider prints nor a clean history, a market cap more than fifty
+times the company's own reported public float is rejected.
 
 ### 4.1 Why bulk archives rather than per-filing scraping
 
@@ -207,6 +245,101 @@ sample there is no direct flag, so the routine classifier is the behavioral prox
 scheduled trading. Post-2023 the checkbox provides a partial validation set for the
 classifier — a nice bonus test.
 
+### 6.1 Judgment calls, as implemented
+
+The rule above leaves four genuine ambiguities. Each is a named parameter of
+`ClassifierConfig` so Section 12's robustness sweep can vary it; the defaults are below.
+
+| Choice | Default | Why |
+|---|---|---|
+| Which codes define the pattern | `{P, S}` | See below — the single most consequential call |
+| Where the evaluation dates sit | Calendar (1 January) | CMP "designate all insiders … at the beginning of each calendar year" |
+| Which month a trade belongs to | Transaction month | The pattern is a claim about when the insider *trades*; observability is still governed by filing date |
+| Insiders with a gap year | Unclassified | CMP "require an insider to make at least one trade in each of the three preceding years" |
+
+The window is always the 36 months immediately preceding the evaluation month, so the
+calendar and rolling anchors differ only in where evaluation dates sit. A trade is
+visible at date `t` only if it was filed in a strictly earlier month, so no trade can
+ever contribute to its own label.
+
+**The transaction-code call.** Measuring the pattern over *all* codes makes 83% of
+classified trades routine, against CMP's 54.8%: RSU vesting and the tax withholding it
+triggers (code `F`) recur on a fixed monthly calendar and mechanically make nearly every
+compensated employee routine. Under that rule an executive with monthly vesting is
+permanently routine and every discretionary purchase they ever make is discarded —
+which would quietly destroy the headline result. Restricting the pattern to open-market
+codes reproduces CMP closely and validates better against the 10b5-1 flag, and matches
+CMP's source being a database of open-market transactions. Both settings are retained
+and swept.
+
+**Gap years.** Requiring a trade in every one of the three prior years is what keeps the
+sporadic filer out of the opportunistic bucket. Relaxing it to a filing-history *span*
+rule (available as `require_trade_every_year=False`) roughly doubles the opportunistic
+bucket with insiders who simply trade rarely, which is not the same economic object.
+
+**Known bias.** The routine test is existential over months, so an insider who trades in
+many months per year is mechanically more likely to be labelled routine. CMP's
+definition has the same property and it is intended: an insider trading every month is
+the paper's canonical routine trader.
+
+### 6.2 Realized distribution and replication check
+
+Measured over 2014–2025 with the defaults above (`scripts/03_classify.py`, 1.5s to
+classify 102,461 insiders with open-market history at 15 annual evaluation dates):
+
+| Metric | This sample (2014–2025) | CMP Table I (1989–2007) |
+|---|---|---|
+| Classified share of all transactions | 25.4% | ~33% |
+| Routine share of classified trades | 48.7% | 54.8% |
+| Routine share of classified buys | 59.2% | 64.4% |
+| Routine share of classified sells | 56.6% | 52.0% |
+
+Close on every dimension, and materially closer than any other parameterization tested.
+Residual divergence has three plausible sources, none of which is resolvable from free
+data: CMP screen to CRSP-listed firms while this table is the entire Form 4 universe
+including microcaps and OTC names that trade rarely and so fail the three-year test;
+their Thomson Reuters feed is analyst-cleaned while DERA is raw filer output; and
+same-month sell programs are far more prevalent post-2003 than in their sample, which
+plausibly explains the one metric that runs *higher* here than in CMP (routine sells).
+
+Labels are sticky without being frozen, which is what a behavioral proxy should look
+like. Among insiders classified at two consecutive evaluation dates, 76% of routine
+insiders stay routine and 82% of opportunistic insiders stay opportunistic; counting
+lapses out of the classified universe as well, the annual persistence rates are 58% and
+51%. Across the sample, 24% of insiders ever classified appear in both buckets at some
+point.
+
+At insider level the buckets are much less balanced than the trade counts suggest —
+about 2,400 routine insiders against 5,400 opportunistic ones at the 2014 evaluation
+date, with the routine group trading several times as often. That asymmetry is expected
+and is the reason CMP report trade shares rather than insider shares.
+
+### 6.3 Validation against the Rule 10b5-1 checkbox
+
+The checkbox exists only from 2023Q1 (67% coverage in 2023, 100% from 2024), so the
+classifier never sees it — a genuine held-out label. Trades filed 2024 onward,
+classified insiders only:
+
+| Subset | Routine flagged | Opportunistic flagged | Odds ratio | Insider-clustered OR |
+|---|---|---|---|---|
+| All codes | 47.7% | 24.8% | 2.77 | 2.87 (p≈1e-125) |
+| Open-market (`P`, `S`) | 58.6% | 43.0% | 1.88 | 2.43 (p≈6e-80) |
+| Purchases only (`P`) | 13.3% | 3.5% | 4.27 | 2.36 (p=0.004) |
+
+The classifier agrees with the flag in the predicted direction everywhere, and the
+agreement survives collapsing to one observation per insider-year, which is the
+conservative test — trade-level counts cluster hard within a handful of prolific sellers.
+
+Purchases are the subset the signal actually trades, and there the separation is
+strongest in relative terms: a routine-labelled purchase is roughly four times as likely
+to be filed under a pre-scheduled plan. Absolute rates are low because pre-scheduled
+purchase plans are rare in the first place.
+
+This is corroboration, not an accuracy score. The flag is imperfect ground truth in both
+directions — a plan can be adopted for a single trade, and a genuinely calendar-locked
+trader can trade without one — and 2024–2025 is a two-year window at the very end of the
+sample, well after the behavioral definition was set.
+
 ## 7. Signal construction
 
 ### 7.1 Trade-level score
@@ -220,8 +353,12 @@ conviction_j = shares_j / sharesOwnedAfter_j     # what fraction of the position
 role_j      = w_role(title)
 ```
 
-Normalizing by 20-day average dollar volume rather than market cap keeps the quantity on a
+Normalizing by 20-day dollar volume rather than market cap keeps the quantity on a
 usable scale across the cap spectrum, where `value/mktcap` would be near-zero for large caps.
+Implemented ADV20 is the universe's 20-day **median** dollar volume at `t` (the same
+quantity the liquidity screen uses). SPEC originally said average; the two would rank
+almost identically, and using the screen's own liquidity measure avoids a second
+trailing-window construction.
 
 Initial role weights (all treated as tested parameters, not constants):
 
@@ -284,6 +421,40 @@ positive with a t-statistic above roughly 2, the honest conclusion is that the e
 decayed post-publication, and the project pivots to documenting that decay rather than
 building a strategy on top of noise.
 
+### 8.1 Measured (Milestone 4, 2014–2025)
+
+Run on the realized universe (144 monthly rebalances, median 1,500 names) with
+`W = 90`, `λ = 0.5`, timestamped on filing date. Spearman rank IC of the
+cross-sectionally standardized signal versus forward returns. Newey-West lags scale
+with overlap (`h/21`).
+
+| Horizon | Opp. mean IC | Opp. t | All-insider mean IC | All t | Δ IC |
+|---|---:|---:|---:|---:|---:|
+| 1d | −0.0023 | −0.25 | −0.0024 | −0.33 | +0.0002 |
+| 5d | +0.0093 | +1.09 | +0.0132 | +1.86 | −0.0039 |
+| 21d | +0.0165 | +2.16 | +0.0138 | +2.19 | +0.0027 |
+| 63d | +0.0157 | +1.54 | +0.0157 | +1.82 | +0.0000 |
+| 126d | +0.0188 | +1.48 | +0.0188 | +1.92 | −0.0000 |
+| 252d | +0.0203 | +1.23 | +0.0211 | +2.06 | −0.0009 |
+
+**Gate: NO-GO.** The 21-day opportunistic IC is positive with t = 2.16, but the
+63-day IC, while positive, has t = 1.54 and does not clear the pre-registered
+hurdle. The opportunistic filter's lift versus all insider purchases is
+indistinguishable from zero at every horizon that matters. Quintile sorts are
+monotonic at 63d and 126d for the opportunistic arm (Q5−Q1 = +84 bps and
++165 bps) and not at 21d.
+
+Event coverage is sparse once the classifier is applied: median **46** universe
+names per month with a nonzero opportunistic score (3.3% of the universe),
+versus median **221** (15.9%) with any open-market purchase. That is thinner
+than the unfiltered officer/director counts in §9.1, which do not impose the
+CMP split.
+
+The project proceeds to Milestone 5 as a decay study: an equity curve still
+documents how the faint ranking behaves in portfolio space, but the headline is
+that Cohen, Malloy & Pomorski does not replicate at the pre-registered gate on
+2014–2025.
+
 ## 9. Portfolio construction
 
 - **Rebalance:** monthly, on the first trading day
@@ -314,6 +485,41 @@ Roughly 360 issuers carrying signal in a given month against a 1,500-name univer
 about 24% coverage — ample for quintile sorts on the active subset. Both the long/short
 and the long-versus-matched-benchmark constructions are viable, and both will be reported.
 
+That table is officer/director open-market purchases **without** the CMP split. Once
+the opportunistic filter is applied, median coverage drops to **46** names (SPEC §8.1),
+so the top quintile is ~9 names. A 3% per-name cap then cannot fill a 100% long book
+(that needs 34 names) and a 25% sector cap is often infeasible on a book that clustered
+in one SIC division. Implemented rule: apply the SPEC caps when they are feasible;
+otherwise relax each cap to the minimum that still fully invests. That is a spec
+tension forced by sparsity, not a tuned parameter.
+
+Hedge returns for `beta_sector_matched_etf` are cap-weighted SIC-division portfolios
+from the universe, standing in for the SPDR sector ETF implied by the SIC → XL* map.
+The price panel does not carry the XL* products; SPY (which it does carry) is used
+for trailing 60-day betas. The short is sector-matched dollar-for-dollar, then scaled
+by the long book's weighted SPY-beta.
+
+### 9.2 Measured (Milestone 5, 2014–2025)
+
+144 monthly rebalances. Primary variant `opp_etf_3m`: opportunistic arm, ETF hedge,
+three overlapping vintages. Net of the explicit cost model (~16 bps round-trip).
+Sharpe is arithmetic excess versus Ken French RF / annualized vol. Returns are
+decimals, drawdowns negative.
+
+| Variant | Arm | Hedge | Hold | Avg longs | Turn (x) | Gross Sharpe | Net Sharpe | Net CAGR | Max DD |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `opp_etf_3m` (primary) | opportunistic | sector ETF | 3m | 18.8 | 5.42 | −0.36 | −0.41 | −6.3% | −66.4% |
+| `opp_spread_3m` | opportunistic | quintile spread | 3m | 18.8 | 6.96 | −0.15 | −0.20 | −4.2% | −72.0% |
+| `opp_etf_1m` | opportunistic | sector ETF | 1m | 10.2 | 9.94 | −0.17 | −0.26 | −4.4% | −51.0% |
+| `all_etf_3m` (filter off) | all insiders | sector ETF | 3m | 81.1 | 4.22 | −0.23 | −0.28 | −2.9% | −42.8% |
+
+The faint positive IC does not survive portfolio construction. The hedged opportunistic
+book loses money gross of costs; net of ~16 bps round-trip against 5.4x turnover it
+loses more. The filter-off twin is less bad, not better — the CMP split does not
+earn its keep in portfolio space any more than it did in the IC table. The quintile
+spread is the least-bad Sharpe and still negative, on a short leg that is as thin
+as the long and has no borrow cost. No parameter was retuned.
+
 ## 10. Transaction costs
 
 Two layers, because a single cost assumption is easy to game:
@@ -327,7 +533,26 @@ against a flat round-trip cost from 0 to 100 bps. The number reported is the **b
 cost** at which alpha reaches zero. A strategy that survives 50 bps is real; one that dies
 at 8 bps is a spread illusion, and that is worth showing either way.
 
-Turnover is reported explicitly in annualized terms.
+Turnover is reported explicitly in annualized terms (one-sided notional / NAV per year).
+
+### 10.1 Measured (Milestone 5, primary variant `opp_etf_3m`)
+
+Explicit-model round-trip on the primary book: **15.7 bps** (half-spread by cap
+tercile plus \(k=0.32\) percent × √participation, 10% participation cap, $10mm
+notional). Annualized one-sided turnover: **5.42x**.
+
+Flat round-trip sweep, 0 to 100 bps in 5 bp steps. Alpha is annualized excess versus
+Ken French RF (Newey-West t-stat, 3 lags) — not a full FF5 alpha (Milestone 6).
+
+| | |
+|---|---|
+| Excess vs RF at 0 bps | −598 bps / year (t = −1.24) |
+| Net Sharpe at 0 bps | −0.39 |
+| Break-even cost (alpha = 0) | **none** — excess is never positive |
+| Break-even cost (Sharpe = 0) | **none** |
+
+Net alpha is dead at realistic costs because it is already dead at zero cost. That is
+the expected reading of a NO-GO IC gate, not a surprise.
 
 ## 11. Risk attribution
 
@@ -345,6 +570,19 @@ and R². Also report the same regression on the raw signal-sorted quintile sprea
 The question being answered is direct: **is there residual alpha, or is this repackaged
 small-cap value?** Insider buying loads naturally on value and size, so a large `β_SMB` and
 `β_HML` with an insignificant `α` is a plausible outcome and will be reported as such.
+
+### 11.1 Measured (Milestone 6, 2014–2025)
+
+Newey-West HAC, 6 monthly lags (three-month overlap). Alpha is annualized basis points. 144 months.
+
+| Regression | α (bps/yr) | t | MKT | SMB (t) | HML (t) | UMD (t) | R² |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `opp_etf_3m_net` (primary) | **−341** | **−0.84** | −0.04 | **+0.69 (3.71)** | +0.10 (0.72) | −0.22 (−2.20) | 0.33 |
+| `opp_etf_3m_gross` | −256 | −0.63 | −0.04 | +0.69 | +0.10 | −0.22 | 0.32 |
+| `opp_spread_3m_net` | −305 | −0.55 | +0.05 | +0.44 | +0.14 | −0.14 | 0.13 |
+| `all_etf_3m_net` | −102 | −0.43 | +0.01 | +0.79 (8.80) | +0.13 | −0.15 (−2.46) | 0.57 |
+
+Residual alpha on the primary net book is negative and indistinguishable from zero. Costs do not create the hole — the gross residual is also negative. The book loads significantly on **SMB**, not on HML: this is a small-cap tilt with a residual that is still a loss, not a stealth value factor. UMD is reliably negative (buying weakness). The filter-off twin has a smaller hole (−102 bps) and an even larger SMB loading. After factors there is nothing left.
 
 ## 12. Robustness battery
 
@@ -366,22 +604,75 @@ parameter sweep is presented as a heatmap showing whether performance is a broad
 a lone spike — a plateau is evidence of robustness, a spike is evidence of overfitting.
 Sharpe ratios are haircut accordingly rather than reported at face value.
 
+### 12.1 Measured (Milestone 6)
+
+Grid, net of the explicit cost model, FF5+UMD alpha. Baseline is `opp_etf_3m` net.
+
+| Cut | Family | n | Sharpe | α (bps) | t |
+|---|---|---:|---:|---:|---:|
+| Baseline `opp_etf_3m` | headline | 144 | **−0.41** | **−341** | −0.84 |
+| 2014–2019 | subperiod | 72 | +0.11 | +424 | +0.81 |
+| 2020–2025 | subperiod | 72 | **−0.86** | **−1,187** | **−2.52** |
+| Ex-COVID 2020 Q1–Q2 | event_exclusion | 138 | −0.43 | −288 | −0.70 |
+| Small-cap tercile | cap_tercile | 144 | −0.18 | −74 | −0.12 |
+| Mid-cap tercile | cap_tercile | 144 | −0.84 | −1,259 | −2.48 |
+| Large-cap tercile | cap_tercile | 144 | −0.38 | −475 | −1.21 |
+| Drop financials | sector_exclusion | 144 | −0.29 | −151 | −0.29 |
+| Drop energy (Mining) | sector_exclusion | 144 | −0.40 | −300 | −0.75 |
+| All insiders (filter off) | signal_definition | 144 | −0.28 | −102 | −0.43 |
+
+Buys-only is already the core; a net (buys−sales) variant was not built and is not invented.
+
+The loss is not a COVID artifact (ex-COVID Sharpe −0.43). It is concentrated in 2020–2025. Small-caps are the least-bad tercile and still lose money — CMP's "stronger in smaller names" prediction does not flip the sign. Dropping financials or energy does not rescue the book.
+
+**W×λ sweep** (metric: 21-day mean Spearman IC). W ∈ {30, 60, 90, 120, 180}, λ ∈ {0, 0.25, 0.5, 0.75, 1.0}. IC ranges from +0.0024 to +0.0182; 10 of 25 cells have |t| ≥ 2, all of them in the W = 90–120 ridge. λ does not matter. The SPEC default (W=90, λ=0.5) is +0.0165 (t = 2.16) and is not an outlier. **Weak plateau, not a spike.** There is no magic cell.
+
+**Randomization.** Shuffle S within date, 1,000 draws, statistic = 21-day mean IC. Null mean ≈ 0, null std = 0.0023. Observed +0.0165 sits at the **100th percentile** of the shuffle (two-sided p ≈ 0). That is the faint ranking the IC gate already reported (t = 2.16). It is not a tradable alpha: the same score, put through the SPEC book, has net Sharpe −0.41.
+
+**Bootstrap** (stationary, mean block 6 months, 2,000 resamples) on the primary net book: Sharpe 95% CI [−1.05, +0.18]; FF5+UMD alpha 95% CI [−1,131, +618] bps. Both contain zero. 21-day mean IC CI [+0.003, +0.032] does not — the whisper of ranking is real; the book is not.
+
+**Multiple testing.** 51 specifications counted (10 grid rows, 25 sweep cells, 4 backtest variants, 12 IC horizon×arm cells). Harvey–Liu–Zhu expected-max haircut subtracts 0.20 from the headline Sharpe of −0.41 and leaves a **deflated Sharpe of −0.61**. After multiple tests there is nothing left.
+
 ## 13. Known limitations
 
 Stated up front in the writeup, not buried:
 
-1. **Survivorship bias.** Free price data omits delisted names, inflating returns.
-   Direction of bias is known and disclosed; magnitude estimated by comparing universe
-   counts against expected attrition.
+1. **Survivorship bias — measured, and worse than "some names are missing".** Yahoo
+   serves no history at all for a delisted ticker. Activision, Twitter, SVB Financial,
+   Cerner and Xilinx were each requested successfully alongside live names of the same
+   size and returned nothing, so this is the vendor's behaviour rather than a throttling
+   artifact. The consequence is that a company is missing from the panel for the whole
+   sample, not just after it dies: the 2014 universe is built only from companies that
+   were still listed in 2025. Of the realized universe, essentially no name stops
+   printing prices before the sample ends, against the 2–4% annual attrition the S&P
+   1500 actually experiences.
+
+   The direction is not uniform, and for this project it matters that the test is
+   long/short rather than long-only. Missing names are missing from both legs, so the
+   bias only distorts the result to the extent that disappearing correlates with the
+   signal — and it does, in both directions. Acquisitions complete at a premium and
+   insiders buy ahead of them, so the long leg loses some of its best outcomes;
+   bankruptcies remove names insiders were not buying, so the short leg loses some of
+   its best outcomes. The two partially offset, which is a reason to report the
+   long and short legs separately rather than only the spread. See §4.2 for what the
+   panel is checked against.
 2. **10b5-1 opacity pre-2023.** The routine classifier is a behavioral proxy, not a direct
-   observation, for most of the sample.
+   observation, for most of the sample. Measured precision / recall against the
+   post-2023 checkbox are 0.55 / 0.73 — near 0.6.
 3. **Event sparsity.** Open-market purchases are rare, so cross-sectional breadth is
    limited and confidence intervals are wide. Bootstrapped rather than asymptotic.
 4. **Two-day disclosure lag plus monthly rebalancing** means realized entry is meaningfully
    after the insider's fill. Intentional and realistic.
 5. **No borrow costs or short availability** modeled on the short leg.
 6. **Post-publication decay** is the expected null result and the project is designed to
-   report it cleanly if that is what the data shows.
+   report it cleanly if that is what the data shows. Measured: gate failed; primary net
+   Sharpe −0.41; residual FF5+UMD alpha −341 bps/year (t = −0.84). Verdict in
+   `limitations.json` is `signal_decayed`.
+7. **Name and sector cap relaxation.** Median ~9 names in the opportunistic top quintile
+   cannot fill a 3% / 25% constrained book. Caps relax to the minimum that still fully
+   invests (SPEC §9.1).
+8. **ETF hedge is an approximation.** XL* products are not in the price panel. Hedge
+   returns are cap-weighted SIC-division portfolios; SPY is used for trailing betas.
 
 ## 14. Deliverable
 
