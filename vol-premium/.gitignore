@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Raw vendor data is re-downloaded by `vrp run --refresh`; only derived JSON is committed.
+data/raw/*
+!data/raw/.gitkeep
