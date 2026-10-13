@@ -5,7 +5,7 @@ sells that gap with delta-hedged at-the-money straddles priced by Black-Scholes,
 XGBoost forecast of 21-day realized volatility to decide when to step aside, and uses Monte
 Carlo to separate skill from luck.
 
-**Dashboard:** see `web/`, deployed as a static site on Vercel.
+**Live dashboard:** [vol-premium.vercel.app](https://vol-premium.vercel.app) (source in `web/`).
 
 ## Results (out of sample, 1998 – 2026, after costs)
 
