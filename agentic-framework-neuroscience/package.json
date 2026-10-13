@@ -1,0 +1,13 @@
+{
+  "name": "agentic-framework-neuroscience",
+  "version": "0.1.0",
+  "description": "Three human-AI pairs collaborating with shared global memory and private pair memory.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
