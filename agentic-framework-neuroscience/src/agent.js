@@ -48,12 +48,14 @@ export class Agent {
    * speak above a threshold.
    */
   async think(ctx) {
-    if (provider !== 'offline') {
+    if (provider !== 'offline' && !ctx.offline) {
       try {
         const out = parseJson(await complete({ system: this.systemPrompt(ctx), user: this.userPrompt(ctx) }));
         if (out) return normalize(out);
+        return { ...offlineThink(this, ctx), error: 'The model did not return valid JSON.' };
       } catch (err) {
         console.error(`[agent ${this.name}] LLM call failed, using offline fallback:`, err.message);
+        return { ...offlineThink(this, ctx), error: err.message.slice(0, 300) };
       }
     }
     return offlineThink(this, ctx);

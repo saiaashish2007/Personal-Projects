@@ -1,6 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { Agent, ROLES, CRITICALITY, SPEAK_THRESHOLD } from './agent.js';
+import { ROLES, CRITICALITY, SPEAK_THRESHOLD } from './agent.js';
 import { GlobalMemory, PairMemory, newId } from './memory.js';
 import { describeProvider } from './llm.js';
 
@@ -11,6 +9,9 @@ export const MODES = {
   both: { label: 'Human + agent', has: 'H3–H4' },
 };
 const MAX_AGENT_CHAIN = 2;
+const THINKING_TTL_MS = 90 * 1000;
+const MAX_EVENTS = 400;
+const DAILY_LLM_CAP = Number(process.env.LLM_DAILY_CAP || 150);
 
 const DEFAULT_PAIRS = {
   A: { humanName: 'Human A', agentName: 'Atlas', role: 'facilitator' },
@@ -20,13 +21,17 @@ const DEFAULT_PAIRS = {
 
 export class SessionError extends Error {}
 
+/**
+ * All collaboration state for one triad. A Session is rebuilt from a stored
+ * snapshot on every request, so it must stay plain data plus pure mutations.
+ * Anything that needs an LLM call is queued as a job (see prepareJob/applyJob)
+ * and executed by the runtime outside the state transaction.
+ */
 export class Session {
-  constructor({ dataDir = null, onChange = () => {} } = {}) {
-    this.dataDir = dataDir;
-    this.onChange = onChange;
-    this.queue = Promise.resolve();
-    this.thinking = {};
-    if (!this.load()) this.reset();
+  constructor({ snapshot = null } = {}) {
+    this.jobs = [];
+    if (snapshot) this.load(snapshot);
+    else this.reset();
   }
 
   // ---------- lifecycle ----------
@@ -42,38 +47,27 @@ export class Session {
     this.frictions = [];
     this.modeHistory = [];
     this.events = [];
-    this.buildAgents();
+    this.thinking = {};
+    this.usage = this.usage ?? { day: today(), calls: 0 };
+    this.llmError = null;
+    this.jobs = [];
     this.changed('reset');
   }
 
-  buildAgents() {
-    this.agents = Object.fromEntries(
-      PAIR_IDS.map((id) => [id, new Agent({ pairId: id, name: this.pairs[id].agentName, role: this.pairs[id].role })])
-    );
-  }
-
-  load() {
-    if (!this.dataDir) return false;
-    const file = path.join(this.dataDir, 'session.json');
-    if (!fs.existsSync(file)) return false;
-    try {
-      const s = JSON.parse(fs.readFileSync(file, 'utf8'));
-      this.task = s.task;
-      this.pairs = s.pairs;
-      this.group = s.group;
-      this.pairThreads = s.pairThreads;
-      this.drafts = s.drafts;
-      this.global = new GlobalMemory(s.global);
-      this.pairMem = Object.fromEntries(PAIR_IDS.map((id) => [id, new PairMemory(id, s.pairMem?.[id])]));
-      this.frictions = s.frictions ?? [];
-      this.modeHistory = s.modeHistory ?? [];
-      this.events = [];
-      this.buildAgents();
-      return true;
-    } catch (err) {
-      console.error('Could not load saved session, starting fresh:', err.message);
-      return false;
-    }
+  load(s) {
+    this.task = s.task ?? null;
+    this.pairs = s.pairs;
+    this.group = s.group ?? [];
+    this.pairThreads = s.pairThreads ?? { A: [], B: [], C: [] };
+    this.drafts = s.drafts ?? { A: [], B: [], C: [] };
+    this.global = new GlobalMemory(s.global);
+    this.pairMem = Object.fromEntries(PAIR_IDS.map((id) => [id, new PairMemory(id, s.pairMem?.[id])]));
+    this.frictions = s.frictions ?? [];
+    this.modeHistory = s.modeHistory ?? [];
+    this.events = s.events ?? [];
+    this.thinking = s.thinking ?? {};
+    this.usage = s.usage ?? { day: today(), calls: 0 };
+    this.llmError = s.llmError ?? null;
   }
 
   snapshot() {
@@ -90,26 +84,23 @@ export class Session {
     };
   }
 
+  toJSON() {
+    return { ...this.snapshot(), events: this.events, thinking: this.thinking, usage: this.usage, llmError: this.llmError };
+  }
+
   changed(eventType, data = {}) {
-    const event = { ts: Date.now(), type: eventType, ...data };
-    this.events.push(event);
-    if (this.events.length > 2000) this.events.shift();
-    if (this.dataDir) {
-      fs.mkdirSync(this.dataDir, { recursive: true });
-      fs.appendFileSync(path.join(this.dataDir, 'events.jsonl'), `${JSON.stringify(event)}\n`);
-      fs.writeFileSync(path.join(this.dataDir, 'session.json'), JSON.stringify(this.snapshot()));
-    }
-    this.onChange();
+    this.events.push({ ts: Date.now(), type: eventType, ...data });
+    if (this.events.length > MAX_EVENTS) this.events.splice(0, this.events.length - MAX_EVENTS);
   }
 
-  // Serializes agent work so concurrent triggers don't interleave turns.
-  schedule(fn) {
-    this.queue = this.queue.then(fn).catch((err) => console.error('[session]', err));
-    return this.queue;
+  schedule(job) {
+    this.jobs.push({ ...job, taskId: this.task?.id ?? null });
   }
 
-  idle() {
-    return this.queue;
+  takeJobs() {
+    const jobs = this.jobs;
+    this.jobs = [];
+    return jobs;
   }
 
   // ---------- task + configuration ----------
@@ -169,7 +160,6 @@ export class Session {
       p.role = role;
     }
     if (typeof teaching === 'boolean') this.pairMem[pairId].userModel.teaching = teaching;
-    this.buildAgents();
     this.changed('pair_config', { pairId, humanName, agentName, role, teaching });
   }
 
@@ -187,7 +177,7 @@ export class Session {
       const msg = this.addMessage({ channel: 'group', pairId, kind: 'human', text });
       this.detectRecovery(pairId, msg);
       this.changed('human_post', { pairId, channel, messageId: msg.id });
-      this.schedule(() => this.groupTurn({ kind: 'group', text, pairId, fromAgent: false, messageId: msg.id }, 0));
+      this.schedule({ kind: 'group', depth: 0, trigger: { kind: 'group', text, pairId, fromAgent: false, messageId: msg.id } });
       return msg;
     }
 
@@ -196,7 +186,7 @@ export class Session {
       const msg = this.addMessage({ channel: pairId, pairId, kind: 'human', text });
       this.detectRecovery(pairId, msg);
       this.changed('human_post', { pairId, channel, messageId: msg.id });
-      this.schedule(() => this.privateTurn(pairId, { kind: 'private', text }));
+      this.schedule({ kind: 'private', pairId, trigger: { kind: 'private', text } });
       return msg;
     }
 
@@ -223,16 +213,61 @@ export class Session {
     return PAIR_IDS.filter((id) => this.pairs[id].mode !== 'human');
   }
 
-  async groupTurn(trigger, depth) {
-    if (!this.task) return;
-    const candidates = this.activeAgentPairs().filter((id) => !(trigger.fromAgent && trigger.pairId === id));
-    if (!candidates.length) return;
+  /**
+   * Phase 1 of a job: decide which agents should think and build their prompts.
+   * Marks them as thinking and reserves LLM budget; returns plain data only.
+   */
+  prepareJob(job) {
+    if (job.taskId !== (this.task?.id ?? null)) return [];
+    let ids = [];
+    let extra = {};
+    if (job.kind === 'group') {
+      if (!this.task) return [];
+      ids = this.activeAgentPairs().filter((id) => !(job.trigger.fromAgent && job.trigger.pairId === id));
+    } else if (job.kind === 'private' || job.kind === 'revise') {
+      if (this.pairs[job.pairId].mode === 'human') return [];
+      ids = [job.pairId];
+      if (job.draftId) extra.lastDraft = this.drafts[job.pairId].find((d) => d.id === job.draftId) ?? null;
+    }
+    if (!ids.length) return [];
 
-    this.setThinking(candidates, true);
-    const results = await Promise.all(
-      candidates.map(async (id) => ({ id, out: await this.agents[id].think(this.buildCtx(id, trigger)) }))
-    );
-    this.setThinking(candidates, false);
+    const now = Date.now();
+    const live = describeProvider().provider !== 'offline';
+    if (this.usage.day !== today()) this.usage = { day: today(), calls: 0 };
+    return ids.map((id) => {
+      this.thinking[id] = now;
+      let offline = !live;
+      if (live) {
+        if (this.usage.calls < DAILY_LLM_CAP) this.usage.calls += 1;
+        else offline = true;
+      }
+      const p = this.pairs[id];
+      return {
+        pairId: id,
+        agent: { pairId: id, name: p.agentName, role: p.role },
+        ctx: { ...this.buildCtx(id, job.trigger, extra), offline },
+      };
+    });
+  }
+
+  /** Phase 2 of a job: write the agents' outputs back into the (fresh) state. */
+  applyJob(job, outs) {
+    for (const id of Object.keys(outs)) delete this.thinking[id];
+    const errored = Object.values(outs).find((o) => o.error);
+    if (errored) this.llmError = { ts: Date.now(), message: errored.error };
+    if (job.taskId !== (this.task?.id ?? null)) return;
+    if (job.kind === 'group') return this.applyGroupTurn(job, outs);
+    if (job.kind === 'private') return this.applyPrivateTurn(job.pairId, job.trigger, outs[job.pairId]);
+    if (job.kind === 'revise') {
+      const out = outs[job.pairId];
+      if (out?.message) this.createDraft(job.pairId, { ...out, motivation: 1 }, { messageId: job.inReplyTo });
+      this.changed('draft_revised', { pairId: job.pairId, from: job.draftId });
+    }
+  }
+
+  applyGroupTurn(job, outs) {
+    const { trigger, depth } = job;
+    const results = Object.entries(outs).map(([id, out]) => ({ id, out }));
 
     const willing = results.filter(({ out }) => out.speak && out.message && out.motivation >= SPEAK_THRESHOLD);
 
@@ -264,15 +299,16 @@ export class Session {
     });
 
     if (posted && depth + 1 < MAX_AGENT_CHAIN) {
-      await this.groupTurn({ kind: 'group', text: posted.text, pairId: posted.pairId, fromAgent: true, messageId: posted.id }, depth + 1);
+      this.schedule({
+        kind: 'group',
+        depth: depth + 1,
+        trigger: { kind: 'group', text: posted.text, pairId: posted.pairId, fromAgent: true, messageId: posted.id },
+      });
     }
   }
 
-  async privateTurn(pairId, trigger, extra = {}) {
-    if (this.pairs[pairId].mode === 'human') return;
-    this.setThinking([pairId], true);
-    const out = await this.agents[pairId].think(this.buildCtx(pairId, trigger, extra));
-    this.setThinking([pairId], false);
+  applyPrivateTurn(pairId, trigger, out) {
+    if (!out || this.pairs[pairId].mode === 'human') return;
     if (out.message) {
       this.addMessage({ channel: pairId, pairId, kind: 'agent', text: out.message, rationale: out.rationale, clarifying: out.clarifying });
     }
@@ -304,7 +340,7 @@ export class Session {
     return draft;
   }
 
-  async reviewDraft({ pairId, draftId, action, text, feedback }) {
+  reviewDraft({ pairId, draftId, action, text, feedback }) {
     this.requirePair(pairId);
     const draft = this.drafts[pairId].find((d) => d.id === draftId);
     if (!draft) throw new SessionError('Draft not found.');
@@ -327,14 +363,15 @@ export class Session {
       // Memory proposals ride along only when the human sent the draft unchanged.
       if (!edited) this.applyMemory(pairId, draft.memory, { humanApproved: true });
       this.changed('draft_reviewed', { pairId, draftId, action: draft.status });
-      this.schedule(() => this.groupTurn({ kind: 'group', text: msg.text, pairId, fromAgent: true, messageId: msg.id }, 1));
+      this.schedule({ kind: 'group', depth: 1, trigger: { kind: 'group', text: msg.text, pairId, fromAgent: true, messageId: msg.id } });
       return msg;
     }
 
     if (action === 'explain') {
       um.engagement.understand += 1;
       this.changed('draft_reviewed', { pairId, draftId, action: 'explain' });
-      return this.schedule(() => this.privateTurn(pairId, { kind: 'explain', text: draft.text }, { lastDraft: draft }));
+      this.schedule({ kind: 'private', pairId, draftId, trigger: { kind: 'explain', text: draft.text } });
+      return null;
     }
 
     if (action === 'revise') {
@@ -343,15 +380,14 @@ export class Session {
       draft.status = 'revised';
       this.addMessage({ channel: pairId, pairId, kind: 'human', text: `Revise: ${feedback.trim()}` });
       this.changed('draft_reviewed', { pairId, draftId, action: 'revise' });
-      return this.schedule(async () => {
-        this.setThinking([pairId], true);
-        const out = await this.agents[pairId].think(
-          this.buildCtx(pairId, { kind: 'revise', text: draft.text, feedback: feedback.trim() }, { lastDraft: draft })
-        );
-        this.setThinking([pairId], false);
-        if (out.message) this.createDraft(pairId, { ...out, motivation: 1 }, { messageId: draft.inReplyTo });
-        this.changed('draft_revised', { pairId, from: draftId });
+      this.schedule({
+        kind: 'revise',
+        pairId,
+        draftId,
+        inReplyTo: draft.inReplyTo,
+        trigger: { kind: 'revise', text: draft.text, feedback: feedback.trim() },
       });
+      return null;
     }
 
     if (action === 'reject') {
@@ -367,12 +403,11 @@ export class Session {
   runRound() {
     this.requireTask();
     const last = [...this.group].reverse().find((m) => m.kind !== 'system');
-    return this.schedule(() => this.groupTurn({ kind: 'round', text: last?.text ?? this.task.title, pairId: null, fromAgent: false }, 0));
+    this.schedule({ kind: 'group', depth: 0, trigger: { kind: 'round', text: last?.text ?? this.task.title, pairId: null, fromAgent: false } });
   }
 
-  setThinking(ids, on) {
-    for (const id of ids) this.thinking[id] = on;
-    this.onChange();
+  isThinking(id) {
+    return Boolean(this.thinking[id]) && Date.now() - this.thinking[id] < THINKING_TTL_MS;
   }
 
   buildCtx(pairId, trigger, extra = {}) {
@@ -482,7 +517,7 @@ export class Session {
     this.pairMem[pairId].userModel.friction += 1;
     this.changed('friction_flagged', friction);
     if (this.pairs[pairId].mode !== 'human') {
-      this.schedule(() => this.privateTurn(pairId, { kind: 'friction', text: this.findMessage(messageId)?.text ?? '' }));
+      this.schedule({ kind: 'private', pairId, trigger: { kind: 'friction', text: this.findMessage(messageId)?.text ?? '' } });
     }
     return friction;
   }
@@ -563,12 +598,12 @@ export class Session {
   view(viewer) {
     const base = {
       viewer,
-      llm: describeProvider(),
+      llm: { ...describeProvider(), callsToday: this.usage.day === today() ? this.usage.calls : 0, dailyCap: DAILY_LLM_CAP },
       task: this.task,
       roles: ROLES,
       criticality: CRITICALITY,
       modes: MODES,
-      pairs: PAIR_IDS.map((id) => ({ ...this.pairs[id], thinking: Boolean(this.thinking[id]) })),
+      pairs: PAIR_IDS.map((id) => ({ ...this.pairs[id], thinking: this.isThinking(id) })),
       group: this.group,
       global: this.global.active(),
       analytics: this.analytics(),
@@ -577,6 +612,7 @@ export class Session {
     if (viewer === 'observer') {
       base.all = Object.fromEntries(PAIR_IDS.map((id) => [id, this.pairPrivate(id)]));
       base.modeHistory = this.modeHistory;
+      base.llmError = this.llmError;
     }
     return base;
   }
@@ -592,6 +628,10 @@ export class Session {
   requireTask() {
     if (!this.task) throw new SessionError('Create a task first.');
   }
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function agencyLevel(share) {

@@ -1,13 +1,19 @@
 {
   "name": "agentic-framework-neuroscience",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Three human-AI pairs collaborating with shared global memory and private pair memory.",
   "type": "module",
+  "private": true,
   "scripts": {
-    "start": "node server.js",
+    "start": "node --env-file-if-exists=.env server.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@cursor/sdk": "^1.0.40",
+    "@neondatabase/serverless": "^1.0.0",
+    "@vercel/functions": "^2.0.0"
   }
 }

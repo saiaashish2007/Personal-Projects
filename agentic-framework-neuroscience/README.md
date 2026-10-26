@@ -32,6 +32,7 @@ The project has three parts:
 - [HTTP API](#http-api)
 - [Data and logging](#data-and-logging)
 - [Configuration](#configuration)
+- [Deploying to Vercel](#deploying-to-vercel)
 - [Tests](#tests)
 - [Limitations and future work](#limitations-and-future-work)
 - [References](#references)
@@ -40,13 +41,16 @@ The project has three parts:
 
 ## Quick start
 
-Requirements: Node.js 18 or later. There are no npm dependencies to install.
+Requirements: Node.js 22.13 or later.
 
 ```bash
 cd agentic-framework-neuroscience
-npm start      # serves http://127.0.0.1:8790
+npm install
+npm start      # serves http://127.0.0.1:8790 (reads .env if present)
 npm test       # runs the test suite
 ```
+
+**Hosted version:** https://triad-collab.vercel.app (protected by an access code; see [Deploying to Vercel](#deploying-to-vercel)).
 
 Open one browser window per participant:
 
@@ -59,15 +63,20 @@ Open one browser window per participant:
 
 Opening `/` with no parameter shows a chooser page.
 
-**Real LLM agents.** Set an API key before starting:
+**Real LLM agents.** Put a key in a `.env` file (git-ignored) in the project folder:
 
 ```bash
-ANTHROPIC_API_KEY=sk-ant-... npm start          # default model: claude-sonnet-4-5
-OPENAI_API_KEY=sk-... npm start                 # default model: gpt-4o-mini
-LLM_MODEL=<model-id> ANTHROPIC_API_KEY=... npm start
+CURSOR_API_KEY=crsr_...        # preferred: runs each agent turn through the Cursor SDK
+LLM_MODEL=composer-2.5         # any model id from Cursor.models.list()
+LLM_DAILY_CAP=150              # hard cap on agent calls per UTC day
+# or: ANTHROPIC_API_KEY=sk-ant-...  /  OPENAI_API_KEY=sk-...
 ```
 
-With no key, the agents run in **offline mode**. They follow the same protocol (motivation scores, drafts, memory writes) using rule-based heuristics and templated text. That's enough for demos, piloting, and rehearsing a study. The header badge shows which mode is active.
+The Cursor provider calls `Agent.prompt` from `@cursor/sdk` with `tools: []`, so the agent can only answer in text: no shell, file, or search tools, and user messages can't make it act on the server. One agent turn is about 4k tokens and 2–4 seconds with `composer-2.5`.
+
+Once the daily cap is reached, agents fall back to the offline heuristics until the next day. The sidebar shows calls used against the cap.
+
+With no key, the agents run in **offline mode**. They follow the same protocol (motivation scores, drafts, memory writes) using rule-based heuristics and templated text. That's enough for demos, piloting, and rehearsing a study. The "Agent engine" card in the sidebar shows which mode is active.
 
 ---
 
@@ -222,24 +231,29 @@ The observer view and the export compute, per pair:
 
 ## Interface walkthrough
 
+The interface follows the "Evreghen Command Center" design system: a warm off-white workspace, a dark frosted-glass sidebar and top bar, orange for actions and live state, and soft status badges (gray Human only, purple Human + agent, blue Agent only).
+
+**Sign-in (`/`)**: a split screen with the triad diagram on one side and a seat picker on the other: Pair A, B, C, or Observer, plus the access code when one is set.
+
 **Pair view (`/?as=A|B|C`)**
-- **Header:** task title, criticality badge, LLM/offline badge, a **New task** button, and a viewer switcher.
+- **Sidebar:** seats (with each pair's current mode and a pulse while its agent thinks), session commands (**New task**, **Run agent round**), and the agent engine card (provider, model, calls used today).
+- **Top bar:** breadcrumb with the task, "agent thinking" chips, and your seat.
+- **Page header:** task title, criticality badge, description, and numbered subtasks.
 - **Team cards:** each pair's mode, agent role, estimated agency level, and a "thinking…" indicator while an agent is deciding.
 - **Group thread:** the conversation shared by all six actors. Agent messages carry an "AI agent" tag and an expandable **Why the agent said this**. Every message has a ⚑ friction flag.
 - **Your pair panel** (visible only to this pair):
   - A mode selector (Human only, Agent only, Human + agent) and the teaching toggle.
   - Context tips: a recovery tip after friction, and an oversight note on high-stakes tasks.
-  - **Drafts waiting for you**, each with the five actions.
-  - **Private chat** with your agent.
-  - **Private pair memory** notes, each with a **Share** button, plus a form to add notes.
-- **Global memory:** decisions, plan, facts, and open questions, each showing its source, with **Sign off** buttons where allowed. The **Run agent round** button sits in this panel's header.
+  - Tabs for **Drafts** (each with the five actions), **Private chat** with your agent, and **Private memory** (notes with a **Share** button, plus a form to add notes).
+- **Global memory:** decisions, plan, facts, and open questions, each showing its source, with **Sign off** buttons where allowed.
 
 **Observer view (`/?as=observer`)**
-- All three private pair channels side by side.
-- An analytics table per pair.
-- **Export session**, **Run agent round**, and **Reset**.
+- Metric cards: group messages per pair, pending drafts, friction flags, and agent calls against the daily cap.
+- The collaboration metrics table per pair.
+- The group thread and global memory, then all three private pair channels side by side.
+- **Export JSON**, **Run agent round**, and **Reset**. A banner appears if an LLM call failed and fell back to the offline agent.
 
-The UI updates live over server-sent events. Re-renders preserve focus, cursor position, and scroll, so typing isn't interrupted when other participants act.
+The UI polls `/api/state` (about every 1.5 s, faster while an agent is thinking). The server answers `unchanged` when nothing moved, so idle polling is cheap. Re-renders preserve focus, cursor position, and scroll, so typing isn't interrupted when other participants act.
 
 ---
 
@@ -294,37 +308,48 @@ A suggested protocol for a pilot:
 ```
 
 ```
-Browser (public/app.js) ──POST /api/action──▶ server.js ──▶ Session (src/session.js)
-        ▲                                                       │  Agent.think() ×3 (src/agent.js)
-        └──── GET /events?as=<viewer> (SSE, per-viewer view) ◀──┤  LLM adapter (src/llm.js)
-                                                                │  GlobalMemory / PairMemory (src/memory.js)
-                                                                └▶ data/events.jsonl, data/session.json
+Browser (public/app.js)
+   │  POST /api/action ─────────▶ handleApi (src/http.js) ──▶ mutate(): load snapshot → Session action → versioned save
+   │                                       │
+   │                                       └─ waitUntil(runJobs) ─▶ prepareJob (save "thinking")
+   │                                                                → Agent.think() ×N via LLM (src/llm.js)
+   │                                                                → applyJob (save drafts / posts / memory)
+   └─ GET /api/state?as=<viewer>&v=<version> ◀── per-viewer view, or { unchanged } if the version matches
+                                       │
+                          Store (src/store.js): Postgres on Vercel, JSON file locally
 ```
 
 | File | Responsibility |
 |---|---|
-| `server.js` | HTTP server, static files, the SSE stream (one filtered view per viewer, debounced 40 ms, 25 s keep-alive ping), the action endpoint, export. |
-| `src/session.js` | The orchestrator: modes, group and private turns, drafts, memory writes, sign-off, friction and recovery, analytics, per-viewer views, persistence. |
+| `server.js` | Local Node server: static files from `public/`, and routes `/api/*` into the shared handler. |
+| `api/*.js` | Vercel Functions (`state`, `action`, `config`, `presets`, `export`). All call the same handler. |
+| `src/http.js` | Framework-free request handler (Web `Request` → `Response`): the access-code gate, actions, per-viewer state, export. |
+| `src/runtime.js` | `mutate()` (optimistic-concurrency transaction around a Session) and `runJobs()` (runs queued agent turns outside the transaction). |
+| `src/store.js` | Versioned snapshot storage: `PostgresStore` (Neon, `DATABASE_URL`) or `FileStore` (`data/session.json`). |
+| `src/session.js` | The orchestrator: modes, group and private turns (as two-phase jobs), drafts, memory writes, sign-off, friction and recovery, analytics, per-viewer views, the LLM usage cap. |
 | `src/agent.js` | Agent roles, criticality rules, the speaking threshold, LLM prompts (JSON output), and offline heuristics. |
 | `src/memory.js` | `GlobalMemory` and `PairMemory` (including the user model). |
-| `src/llm.js` | Adapter for the Anthropic Messages API, OpenAI chat completions, or offline mode, plus a tolerant JSON parser. |
+| `src/llm.js` | Adapter for the Cursor SDK (tool-less agent), Anthropic, OpenAI, or offline mode, plus a tolerant JSON parser. |
 | `src/presets.js` | Task presets with per-pair private briefs. |
 | `public/` | Single-page UI: `index.html`, `app.js`, `style.css`. |
 | `test/session.test.js` | Test suite (node:test). |
 | `docs/` | Literature review, the source paper (PDF), and the presentation (PPTX). |
 
-Each action runs through a promise queue (`Session.schedule`), so concurrent actions from different participants are applied in order.
+**Concurrency.** Every request rebuilds the Session from the stored snapshot, applies one action, and saves it only if the stored version hasn't moved; otherwise it retries. Agent turns are split into two short transactions around the LLM call. Humans can keep posting while agents think, and a turn that finishes after a new task has started is discarded.
 
 ---
 
 ## HTTP API
 
+When `ACCESS_CODE` is set, every route except `/api/config` needs the header `x-access-code: <code>`, otherwise it returns `401`.
+
 | Method & path | Purpose |
 |---|---|
 | `GET /` , `/app.js`, `/style.css` | Static UI |
-| `GET /events?as=A\|B\|C\|observer` | Server-sent event stream of that viewer's filtered view |
-| `GET /api/presets` | List presets `{ key, title, criticality }` |
-| `GET /api/export` | Download the full session JSON |
+| `GET /api/config` | `{ gated, llm }`, used by the sign-in screen |
+| `GET /api/state?as=A\|B\|C\|observer&v=<version>` | That viewer's filtered view and the state version, or `{ unchanged: true }` if `v` is current |
+| `GET /api/presets` | List presets `{ key, title, criticality, description }` |
+| `GET /api/export` | The full session JSON |
 | `POST /api/action` | Perform an action: `{ "type": "...", ...fields }` |
 
 Action types:
@@ -357,9 +382,9 @@ curl -X POST localhost:8790/api/action -H 'content-type: application/json' \
 
 ## Data and logging
 
-- `data/events.jsonl` is append-only, one JSON event per line: `{ ts, type, ...details }`. The event types are:
+- The session keeps the last 400 events (`{ ts, type, ...details }`) inside its snapshot, and they are included in the export. The event types are:
   `task_created, mode_changed, pair_config, human_post, agent_turn, agent_private, draft_reviewed, draft_revised, memory_added, memory_removed, note_shared, signed_off, friction_flagged, friction_recovery, reset`.
-- `data/session.json` is the latest full state. The server reloads it on startup, so a restart resumes the session.
+- Locally, `data/session.json` holds the latest full state and is reloaded on startup. On Vercel, the snapshot lives in the `triad_state` Postgres table, which is created automatically.
 - **Export session** returns `{ exportedAt, llm, task, pairs, group, pairThreads, drafts, global, pairMem, frictions, modeHistory, analytics, events }`.
 
 `data/` is git-ignored because it may contain participant text.
@@ -370,10 +395,30 @@ curl -X POST localhost:8790/api/action -H 'content-type: application/json' \
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | `8790` | HTTP port (the server binds to 127.0.0.1 only) |
-| `ANTHROPIC_API_KEY` | (unset) | Use Claude for the agents |
-| `OPENAI_API_KEY` | (unset) | Use OpenAI if no Anthropic key is set |
-| `LLM_MODEL` | `claude-sonnet-4-5` / `gpt-4o-mini` | Override the model |
+| `PORT` | `8790` | Local HTTP port (the local server binds to 127.0.0.1 only) |
+| `CURSOR_API_KEY` | (unset) | Run agents through the Cursor SDK (takes priority) |
+| `ANTHROPIC_API_KEY` | (unset) | Use Claude directly if no Cursor key is set |
+| `OPENAI_API_KEY` | (unset) | Use OpenAI if neither key above is set |
+| `LLM_MODEL` | `composer-2.5` / `claude-sonnet-4-5` / `gpt-4o-mini` | Override the model |
+| `LLM_DAILY_CAP` | `150` | Maximum agent LLM calls per UTC day; after that, agents use offline heuristics |
+| `ACCESS_CODE` | (unset) | If set, the UI and API require this code |
+| `DATABASE_URL` / `POSTGRES_URL` | (unset) | Postgres connection string; without it, state goes to `data/session.json` |
+
+## Deploying to Vercel
+
+The repo deploys as a static site (`public/`) plus Vercel Functions (`api/`). `vercel.json` gives `api/action.js` up to 120 s, because agent turns run there in the background through `waitUntil`, and bundles the Cursor SDK's native binary.
+
+```bash
+npx vercel link --project triad-collab
+npx vercel integration add neon          # Postgres; sets DATABASE_URL on the project
+printf '%s' "$CURSOR_API_KEY" | npx vercel env add CURSOR_API_KEY production --sensitive
+printf '%s' 'composer-2.5'   | npx vercel env add LLM_MODEL production
+printf '%s' '150'            | npx vercel env add LLM_DAILY_CAP production
+printf '%s' "$ACCESS_CODE"   | npx vercel env add ACCESS_CODE production --sensitive
+npx vercel deploy --prod
+```
+
+The deployment needs a database. Each Vercel Function has its own memory, so without `DATABASE_URL` the state would not be shared across requests.
 
 Tunable constants in code: `SPEAK_THRESHOLD` (`src/agent.js`), `MAX_AGENT_CHAIN` (`src/session.js`), and the agency thresholds in `agencyLevel()` (`src/session.js`).
 
@@ -385,7 +430,7 @@ Tunable constants in code: `SPEAK_THRESHOLD` (`src/agent.js`), `MAX_AGENT_CHAIN`
 npm test
 ```
 
-The 9 tests cover:
+The 12 tests cover:
 - Private briefs stay private, and each agent's context contains only its own pair's memory.
 - Shared notes carry provenance.
 - Mode rules (Agent only humans can't post; Human only agents stay silent).
@@ -394,6 +439,7 @@ The 9 tests cover:
 - Sign-off rules.
 - Recovery classification.
 - The agency estimate.
+- Snapshot round trips, the store + runtime path (an action persists, then a background agent turn lands), and rejection of stale writes.
 
 ---
 
@@ -402,8 +448,8 @@ The 9 tests cover:
 - **Offline agents are templated.** They follow the full protocol but don't reason. Use an API key for real studies.
 - **The agency level is an estimate** based on authorship share, not a validated H1–H5 annotation. You could validate it against human coders, or against the paper's LLM-based classifier.
 - **Recovery classification is a simple word-level heuristic.** An LLM classifier using the paper's taxonomy would be more faithful.
-- **No authentication.** Anyone who can reach the URL can open any view, and the server binds to localhost only. Add auth and HTTPS before a remote study.
-- **Single process, in memory, one session at a time.** Running several groups in parallel would need a session ID in the URLs.
+- **One shared access code, not real accounts.** Anyone with the code can open any seat, including the observer view. For a real study, give each participant a per-seat login.
+- **One session at a time.** Running several groups in parallel would need a session ID in the URLs and in the state table.
 - **Scale.** The design is fixed at three pairs (six actors). Generalizing to N pairs mostly means changing `PAIR_IDS` and the layout.
 - **Possible extensions:**
   - Voice channels, as in Chen et al. 2025.

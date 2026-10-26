@@ -1,14 +1,29 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Session, SessionError } from '../src/session.js';
+import { Agent } from '../src/agent.js';
 import { PRESETS } from '../src/presets.js';
+import { createStore } from '../src/store.js';
+import { mutate, readSession, runJobs } from '../src/runtime.js';
 
 const hidden = PRESETS.find((p) => p.key === 'hidden-profile');
 
 function fresh() {
   const s = new Session();
   s.createTask(hidden);
+  s.takeJobs();
   return s;
+}
+
+// Runs queued agent jobs in-process, the same two phases the runtime uses.
+async function drain(s) {
+  while (s.jobs.length) {
+    const job = s.jobs.shift();
+    const planned = s.prepareJob(job);
+    const outs = {};
+    for (const p of planned) outs[p.pairId] = await new Agent(p.agent).think(p.ctx);
+    s.applyJob(job, outs);
+  }
 }
 
 test('private briefs stay in each pair and never reach other viewers', () => {
@@ -54,7 +69,7 @@ test('paired agents draft privately; solo agents post to the group', async () =>
   s.setMode('A', 'both');
   s.setMode('C', 'agent');
   s.post({ pairId: 'B', channel: 'group', text: 'Sounds good, I agree. Let us decide on Riverton as final.' });
-  await s.idle();
+  await drain(s);
   const critic = s.group.find((m) => m.kind === 'agent' && m.pairId === 'C');
   assert.ok(critic, 'solo critic agent should challenge the consensus in the group');
   assert.ok(!s.group.some((m) => m.kind === 'agent' && m.pairId === 'A' && !m.viaDraft), 'paired agent must not post directly');
@@ -68,7 +83,7 @@ test('draft review updates the engagement user model', async () => {
   s.createDraft('A', { message: 'Draft two', rationale: 'r', clarifying: false, memory: [], motivation: 0.8 }, {});
   const d2 = s.drafts.A.at(-1);
   await s.reviewDraft({ pairId: 'A', draftId: d2.id, action: 'reject' });
-  await s.idle();
+  await drain(s);
   const e = s.pairMem.A.userModel.engagement;
   assert.equal(e.adapt, 1);
   assert.equal(e.reject, 1);
@@ -95,6 +110,35 @@ test('recovery after friction is classified', () => {
   s.post({ pairId: 'A', channel: 'group', text: 'Riverton stadium is under renovation, Lakeside has two league venues and cheaper hotels' });
   assert.equal(s.frictions[0].recovery, 'repair');
   assert.equal(s.pairMem.A.userModel.recoveries.repair, 1);
+});
+
+test('state survives a snapshot round trip', () => {
+  const s = fresh();
+  s.post({ pairId: 'A', channel: 'group', text: 'hello' });
+  const again = new Session({ snapshot: JSON.parse(JSON.stringify(s.toJSON())) });
+  assert.equal(again.group.at(-1).text, 'hello');
+  assert.equal(again.task.id, s.task.id);
+  assert.deepEqual(again.view('B').mine.notes, s.view('B').mine.notes);
+});
+
+test('store + runtime: actions persist and background agent turns land', async () => {
+  const store = createStore();
+  await mutate(store, (s) => s.createTask(hidden));
+  await mutate(store, (s) => s.setMode('C', 'agent'));
+  const { jobs } = await mutate(store, (s) => s.post({ pairId: 'B', channel: 'group', text: 'I agree, let us decide on Riverton as final.' }));
+  assert.equal(jobs.length, 1);
+  await runJobs(store, jobs);
+  const { session } = await readSession(store);
+  assert.ok(session.group.some((m) => m.kind === 'agent' && m.pairId === 'C'));
+  assert.ok(!session.isThinking('C'));
+});
+
+test('stale writes are rejected so concurrent requests cannot clobber each other', async () => {
+  const store = createStore();
+  const { version, data } = await store.read();
+  assert.equal(await store.write({ a: 1 }, version), true);
+  assert.equal(await store.write({ a: 2 }, version), false);
+  assert.equal(data, null);
 });
 
 test('agency estimate follows who authored group messages', () => {
