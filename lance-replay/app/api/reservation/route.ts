@@ -1,5 +1,5 @@
-import { getReservation, saveReservation } from "@/lib/store";
-import { SEED, type Reservation } from "@/lib/types";
+import { getReservation, listReservations, replaceBook, saveReservation } from "@/lib/store";
+import { BOOK, type Reservation } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ function isDate(value: string) {
 }
 
 export async function GET() {
-  return Response.json({ reservation: getReservation() }, { headers: noStore });
+  return Response.json({ reservations: listReservations() }, { headers: noStore });
 }
 
 export async function PATCH(request: Request) {
@@ -26,14 +26,22 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Expected a reservation." }, { status: 400, headers: noStore });
   }
 
-  const current = getReservation();
   const input = body as Record<string, unknown>;
+  if (input.restore === true) {
+    replaceBook(BOOK);
+    return Response.json({ reservations: listReservations() }, { headers: noStore });
+  }
+  const confirmation = typeof input.confirmation === "string" ? input.confirmation.trim() : "";
+  const current = getReservation(confirmation) ?? listReservations()[0];
+  if (!current) {
+    return Response.json({ error: "No reservation is on the book." }, { status: 404, headers: noStore });
+  }
+
   const guest = typeof input.guest === "string" ? input.guest.trim() : current.guest;
   const room = typeof input.room === "string" ? input.room.trim() : current.room;
   const arrive = typeof input.arrive === "string" ? input.arrive : current.arrive;
   const depart = typeof input.depart === "string" ? input.depart : current.depart;
-  const lateCheckout =
-    typeof input.lateCheckout === "boolean" ? input.lateCheckout : current.lateCheckout;
+  const lateCheckout = typeof input.lateCheckout === "boolean" ? input.lateCheckout : current.lateCheckout;
 
   if (!guest || guest.length > 80) {
     return Response.json({ error: "Enter a guest name." }, { status: 400, headers: noStore });
@@ -48,13 +56,6 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Departure is before arrival." }, { status: 400, headers: noStore });
   }
 
-  const restored =
-    guest === SEED.guest &&
-    room === SEED.room &&
-    arrive === SEED.arrive &&
-    depart === SEED.depart &&
-    lateCheckout === SEED.lateCheckout;
-
   const next: Reservation = {
     confirmation: current.confirmation,
     guest,
@@ -62,9 +63,8 @@ export async function PATCH(request: Request) {
     arrive,
     depart,
     lateCheckout,
-    status: restored ? "Confirmed" : "Modified",
+    status: "Modified",
   };
-
   saveReservation(next);
-  return Response.json({ reservation: next }, { headers: noStore });
+  return Response.json({ reservation: next, reservations: listReservations() }, { headers: noStore });
 }

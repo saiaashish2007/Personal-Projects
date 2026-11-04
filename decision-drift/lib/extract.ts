@@ -1,6 +1,6 @@
 import corpusJson from "../data/northline.json";
 import { loadCorpus } from "./corpus";
-import { hashToken } from "./similarity";
+import { hashToken, tokenize } from "./similarity";
 import type { Decision, ExtractResult, IngestRequest, SourceKind } from "./types";
 
 const seed = loadCorpus(corpusJson);
@@ -227,6 +227,16 @@ function shortLabelFor(commitment: string, statement: string): string {
   );
 }
 
+const NEGATION = /\b(not|no|never|won't|will not|stop|cancel|drop|instead|no longer)\b/i;
+
+export function polarityCommitment(text: string): string {
+  const inferred = inferCommitment(text);
+  if (inferred) return inferred;
+  const negative = NEGATION.test(text);
+  const tokens = tokenize(text).slice(0, 5).join("-") || "statement";
+  return `${negative ? "not" : "yes"}:${tokens}`;
+}
+
 function heuristicExtract(input: IngestRequest): Decision[] {
   const text = input.text.trim();
   const turns = parseTurns(text);
@@ -242,7 +252,7 @@ function heuristicExtract(input: IngestRequest): Decision[] {
     const strong = STRONG_CUE.test(turn.text);
     if (!commitment && !strong) return;
     if (turn.text.trim().length < 12) return;
-    const resolved = commitment ?? `custom-${hashToken(normalize(turn.text).slice(0, 80)).toString(16)}`;
+    const resolved = commitment ?? polarityCommitment(turn.text);
     const statement = statementFrom(turn.text);
     const speaker = turn.speaker || "Unattributed";
     decisions.push({

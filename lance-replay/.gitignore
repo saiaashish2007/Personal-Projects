@@ -2,6 +2,7 @@ node_modules
 .next
 .vercel
 data/reservation.json
+data/book.json
 data/traces/*.json
 !data/traces/.gitkeep
 .env*

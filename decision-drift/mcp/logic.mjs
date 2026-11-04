@@ -70,11 +70,29 @@ function cosineSimilarity(left, right) {
   return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
 }
 
+function stem(token) {
+  return token.slice(0, Math.min(token.length, 5));
+}
+
+function polarityTokens(commitment) {
+  if (commitment.startsWith("yes:")) return { pole: "yes", tokens: commitment.slice(4).split("-").filter(Boolean) };
+  if (commitment.startsWith("not:")) return { pole: "not", tokens: commitment.slice(4).split("-").filter(Boolean) };
+  return null;
+}
+
 function commitmentsContradict(left, right) {
   const a = left.trim().toLowerCase();
   const b = right.trim().toLowerCase();
   if (!a || !b || a === b) return false;
-  return OPPOSITE_PAIRS.some(([x, y]) => (a === x && b === y) || (a === y && b === x));
+  if (OPPOSITE_PAIRS.some(([x, y]) => (a === x && b === y) || (a === y && b === x))) return true;
+  const leftPole = polarityTokens(a);
+  const rightPole = polarityTokens(b);
+  if (!leftPole || !rightPole || leftPole.pole === rightPole.pole) return false;
+  let shared = 0;
+  for (const token of leftPole.tokens) {
+    if (rightPole.tokens.some((other) => stem(token) === stem(other))) shared += 1;
+  }
+  return shared >= 2;
 }
 
 export function findClosestPriorDecision(candidate, earlier) {

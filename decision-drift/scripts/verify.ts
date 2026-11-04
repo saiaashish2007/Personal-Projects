@@ -86,6 +86,16 @@ assert(novelDrifts[0].summary === "You decided annual billing on Mar 28, but mon
 const empty = deterministicExtract({ text: "   " });
 assert(empty.length === 0, "blank paste");
 
+const hiring = deterministicExtract({
+  text: "Mina Cole: We decided to hire two engineers this quarter.\n\nMina Cole: We are not hiring engineers this quarter.",
+  title: "Staffing",
+  kind: "meeting",
+  date: "2026-04-02",
+});
+assert(hiring.length === 2, `hiring extracted ${hiring.length}`);
+const hiringDrifts = detectDrifts(hiring);
+assert(hiringDrifts.length === 1, `hiring drifts ${hiringDrifts.length}`);
+
 async function main(): Promise<void> {
   const previousKey = process.env.ANTHROPIC_API_KEY;
   delete process.env.ANTHROPIC_API_KEY;

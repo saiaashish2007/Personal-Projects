@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { detectDrifts } from "../lib/drift";
 import { byRecordOrder, formatFullDate, formatMonthDay, kindLabel } from "../lib/format";
 import { hashToken } from "../lib/similarity";
@@ -106,6 +106,11 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [live, setLive] = useState(true);
+  const [listening, setListening] = useState(false);
+  const [extractor, setExtractor] = useState("Live record");
+  const liveLock = useRef(false);
+  const recognizerRef = useRef<{ stop: () => void } | null>(null);
 
   const drifts = useMemo(() => detectDrifts(board.decisions), [board.decisions]);
   const ordered = useMemo(() => [...board.decisions].sort(byRecordOrder), [board.decisions]);
@@ -122,6 +127,154 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
     }
     return ids;
   }, [drifts]);
+
+  useEffect(() => {
+    if (!live || busy || liveLock.current) return;
+    const text = draft.trim();
+    if (text.length < 24) return;
+    const handle = window.setTimeout(() => {
+      void ingest(text, { title, kind, date }, false);
+    }, 700);
+    return () => window.clearTimeout(handle);
+  }, [draft, live, busy, title, kind, date]);
+
+  function mergeBoard(current: Board, incoming: Decision[], paste: Source | null): Board {
+    const known = new Set(current.decisions.map((decision) => decision.id));
+    const novel = incoming.filter((decision) => !known.has(decision.id));
+    if (novel.length === 0) return current;
+    return {
+      decisions: [...current.decisions, ...novel].sort(byRecordOrder),
+      sources: ensureSources(current.sources, novel, paste, seedSources),
+    };
+  }
+
+  async function ingest(
+    text: string,
+    meta: { title: string; kind: SourceKind; date: string },
+    announce: boolean,
+  ): Promise<number> {
+    const sourceId = `src_paste_${hashToken(text).toString(16)}`;
+    const response = await fetch("/api/extract", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, title: meta.title, kind: meta.kind, date: meta.date, sourceId }),
+    });
+    const body = (await response.json()) as ExtractResult & { error?: string };
+    if (!response.ok) {
+      if (announce) setError(body.error || "Could not extract decisions.");
+      return 0;
+    }
+    const incoming = body.decisions ?? [];
+    setExtractor(body.extractor === "claude" ? "Claude" : "Ruleset");
+    let added = 0;
+    setBoard((current) => {
+      const known = new Set(current.decisions.map((decision) => decision.id));
+      const novel = incoming.filter((decision) => !known.has(decision.id));
+      added = novel.length;
+      const paste: Source | null = novel.some((decision) => decision.sourceId === sourceId)
+        ? {
+            id: sourceId,
+            title: meta.title.trim() || "Pasted conversation",
+            kind: meta.kind,
+            date: meta.date,
+            raw: text,
+          }
+        : null;
+      return mergeBoard(current, novel, paste);
+    });
+    if (announce) {
+      if (incoming.length === 0) setStatus("No decision found in that conversation.");
+      else if (added === 0) setStatus("Those decisions are already on the record.");
+      else {
+        const noun = added === 1 ? "decision" : "decisions";
+        setStatus(body.extractor === "claude" ? `Added ${added} ${noun} with Claude.` : `Added ${added} ${noun}.`);
+      }
+    }
+    return added;
+  }
+
+  async function watchLive() {
+    if (busy) return;
+    recognizerRef.current?.stop();
+    setListening(false);
+    liveLock.current = true;
+    setLive(false);
+    setBusy(true);
+    setError("");
+    setBoard({ decisions: [], sources: [] });
+    try {
+      for (const source of seedSources) {
+        setStatus(`Hearing ${source.title}`);
+        setDraft(source.raw);
+        setTitle(source.title);
+        setKind(source.kind);
+        setDate(source.date);
+        setActiveSample(source.id);
+        await ingest(source.raw, source, false);
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+      }
+      setStatus("Live meeting finished. New reversals are on the cards above.");
+    } catch {
+      setError("The live meeting stopped before the last conversation.");
+    } finally {
+      liveLock.current = false;
+      setBusy(false);
+      setLive(true);
+    }
+  }
+
+  function toggleMic() {
+    const host = window as Window & {
+      SpeechRecognition?: new () => {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        start: () => void;
+        stop: () => void;
+        onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+        onerror: (() => void) | null;
+        onend: (() => void) | null;
+      };
+      webkitSpeechRecognition?: new () => {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        start: () => void;
+        stop: () => void;
+        onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+        onerror: (() => void) | null;
+        onend: (() => void) | null;
+      };
+    };
+    const Ctor = host.SpeechRecognition ?? host.webkitSpeechRecognition;
+    if (!Ctor) {
+      setError("This browser has no speech recognition. Paste the transcript instead.");
+      return;
+    }
+    if (listening) {
+      recognizerRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const recognizer = new Ctor();
+    recognizer.continuous = true;
+    recognizer.interimResults = false;
+    recognizer.lang = "en-US";
+    recognizer.onresult = (event) => {
+      let finalText = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        if (event.results[index].isFinal) finalText += event.results[index][0]?.transcript ?? "";
+      }
+      if (!finalText.trim()) return;
+      setDraft((current) => `${current}${current ? "\n\n" : ""}${finalText.trim()}`);
+    };
+    recognizer.onerror = () => setListening(false);
+    recognizer.onend = () => setListening(false);
+    recognizerRef.current = recognizer;
+    recognizer.start();
+    setListening(true);
+    setError("");
+  }
 
   function runDemo() {
     setBoard({ decisions: seedDecisions, sources: seedSources });
@@ -148,7 +301,6 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
   async function onExtract(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    setStatus("");
     const text = draft.trim();
     if (!text) {
       setError("Paste a transcript or a Slack thread first.");
@@ -156,41 +308,7 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
     }
     setBusy(true);
     try {
-      const sourceId = `src_paste_${hashToken(text).toString(16)}`;
-      const response = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text, title, kind, date, sourceId }),
-      });
-      const body = (await response.json()) as ExtractResult & { error?: string };
-      if (!response.ok) {
-        setError(body.error || "Could not extract decisions.");
-        return;
-      }
-      const incoming = body.decisions ?? [];
-      if (incoming.length === 0) {
-        setStatus("No decision found in that paste.");
-        return;
-      }
-      const known = new Set(board.decisions.map((decision) => decision.id));
-      const novel = incoming.filter((decision) => !known.has(decision.id));
-      if (novel.length === 0) {
-        setStatus("Those decisions are already on the record.");
-        return;
-      }
-      const paste: Source | null = novel.some((decision) => decision.sourceId === sourceId)
-        ? { id: sourceId, title: title.trim() || "Pasted conversation", kind, date, raw: text }
-        : null;
-      setBoard((current) => ({
-        decisions: [...current.decisions, ...novel].sort(byRecordOrder),
-        sources: ensureSources(current.sources, novel, paste, seedSources),
-      }));
-      const noun = novel.length === 1 ? "decision" : "decisions";
-      setStatus(
-        body.extractor === "claude"
-          ? `Added ${novel.length} ${noun} with Claude.`
-          : `Added ${novel.length} ${noun} with the ruleset extractor.`,
-      );
+      await ingest(text, { title, kind, date }, true);
     } catch {
       setError("Could not reach the extractor.");
     } finally {
@@ -221,11 +339,14 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
             <hr className="rule" />
           </div>
           <div className="actions">
-            <button className="ghost" type="button" onClick={clearRecord}>
+            <button className="ghost" type="button" onClick={clearRecord} disabled={busy}>
               Clear
             </button>
-            <button className="primary" type="button" onClick={runDemo} aria-pressed={demoOn}>
-              Run demo
+            <button className="ghost" type="button" onClick={() => void watchLive()} disabled={busy}>
+              {busy ? "Hearing…" : "Watch live"}
+            </button>
+            <button className="primary" type="button" onClick={runDemo} aria-pressed={demoOn} disabled={busy}>
+              Load record
             </button>
           </div>
         </header>
@@ -234,7 +355,7 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
           <li>{ordered.length === 1 ? "1 decision" : `${ordered.length} decisions`}</li>
           <li>{drifts.length === 1 ? "1 drift" : `${drifts.length} drifts`}</li>
           <li>{visibleSources.length === 1 ? "1 source" : `${visibleSources.length} sources`}</li>
-          <li>Ruleset extractor</li>
+          <li>{extractor}</li>
         </ul>
 
         <div className="section-head">
@@ -244,12 +365,12 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
           <div className="empty">
             <p>
               {ordered.length === 0
-                ? "No drift yet. Run the Northline demo to see the March billing reversal."
+                ? "No drift yet. Watch the live meeting, or paste a transcript that reverses an earlier decision."
                 : "No contradictions yet. A later decision that reverses an earlier one will show both quotes here."}
             </p>
             {ordered.length === 0 ? (
-              <button className="primary" type="button" onClick={runDemo}>
-                Run demo
+              <button className="primary" type="button" onClick={() => void watchLive()}>
+                Watch live
               </button>
             ) : null}
           </div>
@@ -318,8 +439,8 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
           <form className="panel" onSubmit={onExtract}>
             <h2>Add a conversation</h2>
             <p className="help">
-              Paste a transcript or a Slack thread. Samples fill the box. Extract adds any decision that is not
-              already on the record.
+              Paste a transcript, dictate it, or load a sample. With live on, decisions land on the record as you
+              type. A later reversal shows both quotes.
             </p>
             <div className="samples">
               {seedSources.map((source) => (
@@ -373,13 +494,21 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
                 {status}
               </p>
             ) : null}
-            <button className="primary" type="submit" disabled={busy}>
-              {busy ? "Extracting…" : "Extract decisions"}
-            </button>
+            <div className="form-actions">
+              <button className={listening ? "primary" : "ghost"} type="button" onClick={toggleMic} disabled={busy}>
+                {listening ? "Stop microphone" : "Listen"}
+              </button>
+              <label className="live-toggle">
+                <input type="checkbox" checked={live} onChange={(event) => setLive(event.target.checked)} />
+                Live
+              </label>
+              <button className="primary" type="submit" disabled={busy}>
+                {busy ? "Extracting…" : "Extract decisions"}
+              </button>
+            </div>
             <p className="notice">
-              Demo extraction runs on a deterministic ruleset, so the page works with no API key. If
-              ANTHROPIC_API_KEY is set on the server, a paste uses Claude and falls back to the ruleset if the
-              call fails.
+              Live extraction runs in the browser’s request and on the server. Set ANTHROPIC_API_KEY and a paste
+              uses Claude, then falls back to the ruleset if the call fails.
             </p>
           </form>
         </div>
@@ -410,9 +539,9 @@ export function Workspace({ company, seedDecisions, seedSources }: Props) {
         )}
 
         <p className="foot">
-          {company} is fictional, and these conversations were written for the demo. Pairing uses hashed
-          bag-of-words cosine similarity, the stand-in for pgvector. Contradiction still checks a short list of
-          opposite commitments.
+          {company} is a fictional company used as the sample record. Pairing uses hashed bag-of-words
+          cosine similarity, the stand-in for pgvector. A reversal is either an opposite commitment or the same
+          claim said later with the opposite polarity.
         </p>
       </div>
     </>

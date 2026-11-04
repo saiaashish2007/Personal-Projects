@@ -6,7 +6,7 @@ The demo company is Northline, a fictional freight-visibility team. Nothing in t
 
 ## Demo hook
 
-Open the app. Five March 2026 conversations are already on the record, with no API key and no database. The first card is:
+Open the app. Press **Watch live** and the five March 2026 conversations are extracted one at a time, with no API key and no database. You can also paste or dictate any transcript; decisions land as you type when Live is on. The first card from the sample is:
 
 > You decided annual billing on Mar 3, but monthly billing on Mar 17.
 

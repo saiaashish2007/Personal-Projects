@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { SEED, type Reservation, type Trace } from "./types";
+import { BOOK, type Reservation, type Trace } from "./types";
 
 type Memory = {
-  reservation: Reservation;
+  reservations: Reservation[];
   traces: Trace[];
 };
 
@@ -13,15 +13,20 @@ const globalStore = globalThis as typeof globalThis & {
 
 const dataDir = path.join(process.cwd(), "data");
 const tracesDir = path.join(dataDir, "traces");
-const reservationPath = path.join(dataDir, "reservation.json");
+const bookPath = path.join(dataDir, "book.json");
 
 function onVercel() {
   return Boolean(process.env.VERCEL);
 }
 
-function readReservationFile(): Reservation | null {
+function cloneBook(rows: Reservation[]): Reservation[] {
+  return rows.map((row) => ({ ...row }));
+}
+
+function readBookFile(): Reservation[] | null {
   try {
-    return JSON.parse(fs.readFileSync(reservationPath, "utf8")) as Reservation;
+    const parsed = JSON.parse(fs.readFileSync(bookPath, "utf8")) as Reservation[];
+    return Array.isArray(parsed) && parsed.length > 0 ? cloneBook(parsed) : null;
   } catch {
     return null;
   }
@@ -42,23 +47,41 @@ function readTraceFiles(): Trace[] {
 function memory(): Memory {
   if (!globalStore.__harborPine) {
     globalStore.__harborPine = {
-      reservation: onVercel() ? { ...SEED } : (readReservationFile() ?? { ...SEED }),
+      reservations: onVercel() ? cloneBook(BOOK) : (readBookFile() ?? cloneBook(BOOK)),
       traces: onVercel() ? [] : readTraceFiles(),
     };
   }
   return globalStore.__harborPine;
 }
 
-export function getReservation(): Reservation {
-  return memory().reservation;
+function persistBook() {
+  if (onVercel()) return;
+  fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(bookPath, JSON.stringify(memory().reservations, null, 2));
+}
+
+export function listReservations(): Reservation[] {
+  return cloneBook(memory().reservations);
+}
+
+export function replaceBook(reservations: Reservation[]) {
+  memory().reservations = cloneBook(reservations);
+  persistBook();
+}
+
+export function getReservation(confirmation?: string): Reservation | undefined {
+  const rows = memory().reservations;
+  if (!confirmation) return rows[0] ? { ...rows[0] } : undefined;
+  const found = rows.find((row) => row.confirmation.toLowerCase() === confirmation.toLowerCase());
+  return found ? { ...found } : undefined;
 }
 
 export function saveReservation(reservation: Reservation) {
-  const next = { ...reservation };
-  memory().reservation = next;
-  if (onVercel()) return;
-  fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(reservationPath, JSON.stringify(next, null, 2));
+  const rows = memory().reservations;
+  const index = rows.findIndex((row) => row.confirmation.toLowerCase() === reservation.confirmation.toLowerCase());
+  if (index >= 0) rows[index] = { ...reservation };
+  else rows.push({ ...reservation });
+  persistBook();
 }
 
 export function listTraces(): Trace[] {

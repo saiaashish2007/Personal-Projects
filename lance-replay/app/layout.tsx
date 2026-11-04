@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Guest Call → PMS Action · Harbor & Pine",
   description:
-    "A scripted guest call carried out in the Harbor & Pine reservation system, then scored step by step.",
+    "A live guest call carried out in the Harbor & Pine reservation system, then scored step by step.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f4ef",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
 };
@@ -16,7 +19,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={mono.variable}>{children}</body>
     </html>
   );
 }
