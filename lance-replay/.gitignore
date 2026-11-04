@@ -1,0 +1,7 @@
+node_modules
+.next
+.vercel
+data/reservation.json
+data/traces/*.json
+!data/traces/.gitkeep
+.env*

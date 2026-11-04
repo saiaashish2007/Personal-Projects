@@ -1,0 +1,128 @@
+{
+  "company": "Northline",
+  "conversations": [
+    {
+      "id": "src_pricing_huddle",
+      "title": "Pricing huddle",
+      "kind": "meeting",
+      "date": "2026-03-03",
+      "raw": "Maya Chen (CEO): Cash has been tighter than the model we showed in January, and finance wants fewer surprise renewals. We're locking annual billing as the default for every new Northline contract. Monthly is only an exception if I sign off.\n\nSam Rivera (COO): That matches what I told the pipeline. Annual up front, net thirty. I'll update the order form tonight.\n\nMaya Chen (CEO): The reason is predictability. We can staff onboarding against a year, not a month-to-month maybe.",
+      "decisions": [
+        {
+          "id": "dec_billing_annual",
+          "position": 0,
+          "statement": "Annual billing is the default for every new contract.",
+          "owner": "Maya Chen",
+          "speaker": "Maya Chen",
+          "rationale": "Cash is tighter than the January model, and onboarding can be staffed against a year.",
+          "date": "2026-03-03",
+          "sourceQuote": "We're locking annual billing as the default for every new Northline contract. Monthly is only an exception if I sign off.",
+          "topic": "billing cadence",
+          "commitment": "annual",
+          "shortLabel": "annual billing"
+        }
+      ]
+    },
+    {
+      "id": "src_product_launch",
+      "title": "#product-launch",
+      "kind": "slack",
+      "date": "2026-03-06",
+      "raw": "#product-launch\n\nJordan Hale  9:14\nDecision for the April release: warehouse exception alerts ship, and the predictive ETA model waits. We don't have ninety days of lane data, so a model would just dress up guesses.\n\nPriya Shah  9:21\nCS can work with alerts. I'll write the yard-change note for the five pilot accounts.\n\nJordan Hale  9:24\nI'll own the release call. A loud alert is better than a confident wrong arrival time.",
+      "decisions": [
+        {
+          "id": "dec_alerts_april",
+          "position": 1,
+          "statement": "Ship warehouse exception alerts in April and defer the predictive ETA model.",
+          "owner": "Jordan Hale",
+          "speaker": "Jordan Hale",
+          "rationale": "Ninety days of lane data is not enough to ship a predictive ETA without dressing up guesses.",
+          "date": "2026-03-06",
+          "sourceQuote": "Decision for the April release: warehouse exception alerts ship, and the predictive ETA model waits.",
+          "topic": "april roadmap",
+          "commitment": "exception-alerts",
+          "shortLabel": "exception alerts in the April release"
+        }
+      ]
+    },
+    {
+      "id": "src_onboarding_review",
+      "title": "Onboarding review",
+      "kind": "meeting",
+      "date": "2026-03-10",
+      "raw": "Priya Shah (Head of CS): The first pilots are messy in a way a setup wizard will not fix. For the first ten customers we stay white-glove. No self-serve onboarding until those ten are live.\n\nMaya Chen (CEO): Agreed. I would rather have ten references than a signup page that strands a dispatcher at 6 a.m.\n\nPriya Shah (Head of CS): I'll stay the owner. We learn the failure cases in the yard, then decide whether self-serve is even real.",
+      "decisions": [
+        {
+          "id": "dec_onboarding_white_glove",
+          "position": 2,
+          "statement": "The first ten customers get white-glove onboarding.",
+          "owner": "Priya Shah",
+          "speaker": "Priya Shah",
+          "rationale": "The first pilots fail in ways a setup wizard will not catch.",
+          "date": "2026-03-10",
+          "sourceQuote": "For the first ten customers we stay white-glove. No self-serve onboarding until those ten are live.",
+          "topic": "onboarding motion",
+          "commitment": "white-glove",
+          "shortLabel": "white-glove onboarding"
+        }
+      ]
+    },
+    {
+      "id": "src_eng_architecture",
+      "title": "#eng-architecture",
+      "kind": "slack",
+      "date": "2026-03-12",
+      "raw": "#eng-architecture\n\nAlex Okonkwo  4:02\nCalling it for this quarter: Postgres remains the system of record. We are not moving to a warehouse-first architecture.\n\nJordan Hale  4:11\nDoes that block the lane-history export the ETA work needs later?\n\nAlex Okonkwo  4:16\nNo. We can replicate out of Postgres. A warehouse-first cutover in the same quarter as the April alerts release is how we miss both.",
+      "decisions": [
+        {
+          "id": "dec_postgres_sor",
+          "position": 3,
+          "statement": "Postgres stays the system of record this quarter.",
+          "owner": "Alex Okonkwo",
+          "speaker": "Alex Okonkwo",
+          "rationale": "A warehouse-first cutover in the same quarter as the April alerts release would miss both.",
+          "date": "2026-03-12",
+          "sourceQuote": "Postgres remains the system of record. We are not moving to a warehouse-first architecture.",
+          "topic": "system of record",
+          "commitment": "postgres",
+          "shortLabel": "Postgres as the system of record"
+        }
+      ]
+    },
+    {
+      "id": "src_gtm_sync",
+      "title": "GTM sync",
+      "kind": "meeting",
+      "date": "2026-03-17",
+      "raw": "Sam Rivera (COO): I sat with two design partners who will not sign a year before they see a month of alerts. Let's switch the default to monthly billing so a pilot can start without a yearly commit.\n\nMaya Chen (CEO): That walks back the March 3 call. I don't love it. The pipeline is stalling on the annual form, and Sam owns the cash gap if we do this.\n\nPriya Shah (Head of CS): We're opening self-serve onboarding for every new pilot starting next week. I can't be in ten yards and also take the three new logos on the forecast.\n\nMaya Chen (CEO): Then the record changes. Monthly billing is the new default, and self-serve is the new front door.",
+      "decisions": [
+        {
+          "id": "dec_billing_monthly",
+          "position": 4,
+          "statement": "Monthly billing is the default so a pilot can start without a yearly commit.",
+          "owner": "Sam Rivera",
+          "speaker": "Sam Rivera",
+          "rationale": "Two design partners will not sign a year before they see a month of alerts.",
+          "date": "2026-03-17",
+          "sourceQuote": "Let's switch the default to monthly billing so a pilot can start without a yearly commit.",
+          "topic": "billing cadence",
+          "commitment": "monthly",
+          "shortLabel": "monthly billing"
+        },
+        {
+          "id": "dec_onboarding_self_serve",
+          "position": 5,
+          "statement": "Self-serve onboarding is the front door for every new pilot.",
+          "owner": "Priya Shah",
+          "speaker": "Priya Shah",
+          "rationale": "Customer success cannot cover ten yards and also absorb the new logo forecast.",
+          "date": "2026-03-17",
+          "sourceQuote": "We're opening self-serve onboarding for every new pilot starting next week.",
+          "topic": "onboarding motion",
+          "commitment": "self-serve",
+          "shortLabel": "self-serve onboarding"
+        }
+      ]
+    }
+  ]
+}
