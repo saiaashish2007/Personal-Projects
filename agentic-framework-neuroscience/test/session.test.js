@@ -144,6 +144,7 @@ test('outside-platform writes follow the approval policy', async () => {
   assert.equal(externalWritePolicy({ mode: 'agent', criticalityRank: 1 }), 'run');
   assert.equal(externalWritePolicy({ mode: 'both', criticalityRank: 3 }), 'draft');
   assert.equal(externalWritePolicy({ mode: 'agent', criticalityRank: 2 }), 'signoff');
+  assert.equal(externalWritePolicy({ mode: 'agent', criticalityRank: 0, tool: 'github.create_pr_review' }), 'signoff', 'GitHub posts always wait for a person');
 
   const s = fresh(postmortem);
   s.setMode('C', 'agent');

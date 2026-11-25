@@ -106,7 +106,8 @@ export class BlobStore {
     const res = await get(this.pathname, { access: 'private', useCache: false, token: this.token });
     if (!res || res.statusCode !== 200) return { version: 0, data: null };
     const { version, data } = JSON.parse(await new Response(res.stream).text());
-    this.etags.set(version, res.blob.etag);
+    // Compressed reads report a weak ETag (W/"…"), but ifMatch on put only accepts the strong form.
+    this.etags.set(version, String(res.blob.etag).replace(/^W\//, ''));
     return { version, data };
   }
 

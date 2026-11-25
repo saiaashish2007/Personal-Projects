@@ -185,7 +185,7 @@ export class McpClient {
 }
 
 /** Flattens an MCP tool result into text an agent can read. */
-export function resultText(result, limit = 4000) {
+export function resultText(result, limit = 15000) {
   const parts = (result?.content ?? []).map((c) => {
     if (c.type === 'text') return c.text;
     if (c.type === 'resource') return c.resource?.text ?? `[resource ${c.resource?.uri ?? ''}]`;

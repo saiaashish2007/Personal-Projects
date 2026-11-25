@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { McpClient, resultText } from './client.js';
 import { webServer } from './web.js';
 import { slackServer } from '../slack.js';
+import { githubServer } from '../github.js';
 
 /**
  * Connector registry. Every platform is reached through the same MCP surface
@@ -18,7 +19,7 @@ import { slackServer } from '../slack.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CACHE_MS = 5 * 60 * 1000;
-const MAX_TOOLS_PER_SERVER = 14;
+const MAX_TOOLS_PER_SERVER = 16;
 
 export const CATALOG = [
   {
@@ -32,12 +33,10 @@ export const CATALOG = [
   {
     id: 'github',
     label: 'GitHub',
-    why: 'Engineering work: read code and issues, open issues and PR comments for tasks the team splits up.',
-    url: 'https://api.githubcopilot.com/mcp/',
-    headers: { Authorization: 'Bearer ${GITHUB_TOKEN}' },
-    env: ['GITHUB_TOKEN'],
-    tools: ['search_repositories', 'get_file_contents', 'list_issues', 'get_issue', 'search_issues', 'create_issue', 'add_issue_comment', 'list_pull_requests', 'get_pull_request'],
-    setup: "Set GITHUB_TOKEN to a fine-grained personal access token. Uses GitHub's official remote MCP server.",
+    why: 'Code review: agents read pull requests, diffs, and files, write a review, and post it once a human approves.',
+    builtin: githubServer,
+    env: [],
+    setup: 'Built in. Public repos work without a token (60 requests/hour). Set GITHUB_TOKEN (fine-grained: Pull requests read/write, Contents read) for private repos, higher limits, and posting reviews.',
   },
   {
     id: 'linear',

@@ -237,19 +237,26 @@ The observer view and the export compute, per pair:
 Each teammate's agent runs three subagents on every turn (`src/agent.js`):
 
 1. **Planner** scores how much the trigger needs this agent (0–1) and writes a short plan. Below `SPEAK_THRESHOLD` (0.55), and unless someone asked it directly, it stays quiet.
-2. **Worker** loops think → tool call → observation for up to about 6 steps, then returns a final message.
+2. **Worker** loops think → tool call → observation for up to 10 model calls (`MAX_CALLS_PER_TURN`), then returns a final message. If the trigger requires a step it skipped (reading the diff of a PR it was asked to review, reading a file someone shared, filing and queuing the review), it is sent back to do it before it may finish.
 3. **Reviewer** checks anything that reaches the team (a deliverable, or a message on an operational or higher task) for accuracy, completeness, and stakes. A `revise` verdict gives the Worker up to two more attempts.
 
 The **team board** (`view.board`) is the shared list of tasks, each with an owner, a status (`todo` / `doing` / `blocked` / `done`), a log, and attached deliverables. The Worker uses these built-in tools (`src/tools.js`):
 
 | Tool | What it does |
 |---|---|
-| `team.create_task`, `team.claim_task`, `team.update_task` | Split the work, take ownership, change status |
-| `team.submit_work` | Attach the finished deliverable (markdown) to a task and mark it done |
-| `team.read_task`, `team.search_memory` | Read a task and its deliverables; search memory, the board, and private notes |
+| `team.create_task`, `team.claim_task`, `team.update_task` | Split the work (with an optional `due`), take ownership, change status |
+| `team.assign_task` | Delegate a task to a teammate: the thread is told who owns it, and that teammate's agent gets a DM to start |
+| `team.list_tasks` | Board status by owner or status, for status updates |
+| `team.submit_work` | Attach the finished deliverable (markdown) to a task, or file it as a new task, and mark it done. The thread gets a "Done:" note |
+| `team.list_files`, `team.read_file` | Files shared in the thread or uploaded (PDF, Word, text, code, CSV, JSON), read in ~6,000-character chunks |
+| `team.read_task`, `team.search_memory` | Read a task and its deliverables; search memory, the board, shared files, and private notes |
 | `team.message_agent` | Direct message to another teammate's agent (shown in the agent channel) |
 | `team.remember` | Save a fact, decision, plan, or question to private or team memory |
 | `team.ask_my_human` | Ask the agent's own human a question in their DM |
+
+**Who answers.** When a person posts, one agent answers first: the agent they named, the owner of a task they mention, or the lead agent. The others take their turn after that answer is in the thread, so they add what is new instead of repeating it. If the first agent stays quiet they get the message; if its model call fails it is retried once.
+
+**Files.** `POST /api/upload` (from the app) and files attached in the Slack thread are converted to text when they arrive (`src/files.js`: PDF via `unpdf`, Word via `mammoth`, plus text, code, CSV, JSON, HTML). Only the extracted text is stored, capped at 60,000 characters per file and the newest 15 files. Images are kept by name only.
 
 Tools run against a working copy of the session, so an agent reads its own writes within a turn. The writes are applied afterwards in one transaction, which keeps slow LLM loops outside the state lock. Every turn stores a trace (plan, each tool call and observation, review) that the observer view and the export show.
 
@@ -261,7 +268,7 @@ Outside platforms are reached through one MCP interface (`src/mcp/`): built-in s
 |---|---|---|
 | Web reader | Built in (read-only; private and internal addresses are blocked) | Nothing |
 | Slack | Built in | `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID` (see below) |
-| GitHub | GitHub's remote MCP server | `GITHUB_TOKEN` |
+| GitHub | Built in (`src/github.js`): list and read PRs, per-file diffs, file contents, existing comments; post a review or comment | Nothing for public repos (60 requests/hour per IP, which a shared Vercel IP can exhaust); `GITHUB_TOKEN` for private repos, higher limits, and posting |
 | Linear | Linear's remote MCP server | `LINEAR_API_KEY` |
 | Notion | Local stdio server (`npm start` only, not on Vercel) | `NOTION_TOKEN` |
 | Google Drive, Jira, anything else | Your MCP server | An entry in `MCP_SERVERS` or `mcp.config.json` |
@@ -272,13 +279,20 @@ Outside platforms are reached through one MCP interface (`src/mcp/`): built-in s
 
 Read tools always run. Tools that change an outside platform follow the task's stakes (`externalWritePolicy` in `src/tools.js`):
 
-- An agent working alone on an ephemeral or operational task runs the write immediately.
+- An agent working alone on an ephemeral or operational task runs the write immediately, except GitHub posts, which always wait for a person.
 - In Human + agent mode, the write is attached to the agent's draft for its human to approve.
 - Otherwise the write goes to the **approvals** list (`view.approvals`), and any present human approves or rejects it with the `decideAction` action. Approved writes run in the background, and the result is logged to the agent's private memory.
 
 ### Slack bridge
 
-With `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` set, the team thread is mirrored into a Slack thread (agent messages post under the agent's name). Replies in that thread from users listed in `SLACK_USER_MAP` (`{"U012ABC":"A"}`) come back in as that teammate, and agents react to them. Point the Slack app's Event Subscriptions at `/api/slack/events`; requests are verified with `SLACK_SIGNING_SECRET` and a 5-minute replay window. Bot scopes: `chat:write`, `chat:write.customize`, `channels:history`, `channels:read`.
+With `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` set, the team thread is mirrored into a Slack thread (agent messages post under the agent's name, and "assigned" and "Done:" notes post too). Anyone in the channel can take part:
+
+- Replies from users listed in `SLACK_USER_MAP` (`{"U012ABC":"A"}`) come in as that teammate.
+- Replies from anyone else come in as a guest, labeled with their Slack name ("Priya (Slack)"), and the agents answer them.
+- @mentioning the bot in the channel brings the message into the thread, and the lead agent must answer it.
+- Files attached to those messages are downloaded and converted to text for the agents.
+
+Point the Slack app's Event Subscriptions at `/api/slack/events` and subscribe to `message.channels` and `app_mention`. Requests are verified with `SLACK_SIGNING_SECRET` and a 5-minute replay window. Bot scopes: `app_mentions:read`, `chat:write`, `chat:write.customize`, `channels:history`, `channels:read`, `users:read`, `files:read`.
 
 ---
 
@@ -382,6 +396,8 @@ Browser (public/app.js)
 | `src/session.js` | The orchestrator: modes, the job queue and lease, group and private turns, drafts, the team board, approvals, memory writes, sign-off, friction and recovery, Slack ingest, analytics, per-viewer views, the LLM usage cap. |
 | `src/agent.js` | The Planner / Worker / Reviewer crew, criticality rules, the speaking threshold, prompts and the tool loop, and offline heuristics. |
 | `src/tools.js` | Team tools, the per-turn workspace, and the outside-write policy. |
+| `src/files.js` | Text extraction for shared files and chunked reading. |
+| `src/github.js` | Built-in GitHub connector for code review. |
 | `src/mcp/` | MCP client (Streamable HTTP and stdio), the connector registry, and the built-in web reader. |
 | `src/slack.js` | Slack API calls, signature checks, thread mirroring, and the built-in Slack connector. |
 | `src/memory.js` | `GlobalMemory` and `PairMemory` (including the user model). |
@@ -407,6 +423,7 @@ When `ACCESS_CODE` is set, every route except `/api/config` needs the header `x-
 | `GET /api/presets` | List presets `{ key, title, criticality, description }` |
 | `GET /api/export` | The full session JSON |
 | `GET /api/connectors[?probe=1]` | Connectors with status and setup notes; `probe=1` also connects and lists their tools |
+| `POST /api/upload` | Share a file in the team thread: `{ pairId, name, type, data (base64, up to 3 MB), text? }` → `{ ok, file }` (metadata; the extracted text stays on the server). `view.files` lists shared files with a short `preview`, and messages carry `files: [id]` |
 | `POST /api/slack/events` | Slack Events API webhook (signature-checked; not behind the access code) |
 | `POST /api/action` | Perform an action: `{ "type": "...", ...fields }` |
 
@@ -464,7 +481,9 @@ curl -X POST localhost:8790/api/action -H 'content-type: application/json' \
 | `DATABASE_URL` / `POSTGRES_URL` | (unset) | Postgres connection string (checked first) |
 | `BLOB_READ_WRITE_TOKEN` | (unset) | Private Vercel Blob store for the shared state when there is no Postgres; set automatically when a Blob store is linked |
 | `DATA_FILE` | `data/session.json` | Local state file when neither store above is set |
-| `DRAIN_BUDGET_MS` | `60000` | How long one background drain runs agent jobs before leaving the rest for the next request |
+| `DRAIN_BUDGET_MS` | `120000` | How long one background drain runs agent jobs before leaving the rest for the next request |
+| `MAX_CALLS_PER_TURN` | `10` | Model calls one agent may make in a turn |
+| `LLM_TIMEOUT_MS` | `90000` | Timeout for one Cursor SDK call (retried once) |
 | `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`, `SLACK_SIGNING_SECRET`, `SLACK_USER_MAP` | (unset) | Slack bridge (see [Slack bridge](#slack-bridge)) |
 | `GITHUB_TOKEN`, `LINEAR_API_KEY`, `NOTION_TOKEN` | (unset) | Turn on those connectors |
 | `MCP_SERVERS` | (unset) | JSON array of extra MCP servers (same shape as `mcp.config.json`) |
@@ -496,13 +515,15 @@ Tunable constants in code: `SPEAK_THRESHOLD` (`src/agent.js`), `MAX_AGENT_CHAIN`
 npm test
 ```
 
-The 23 tests cover:
+The 32 tests cover:
 - Private briefs stay private, and each agent's context contains only its own pair's memory.
 - The team board, team tools, and the outside-write policy.
 - The MCP client over Streamable HTTP (JSON and SSE responses, pagination, session reuse).
 - Slack signature checks and Slack replies joining the team thread once.
 - The web reader blocking private addresses.
-- The Blob store's conditional writes, including two instances writing at once.
+- The Blob store's conditional writes, including two instances writing at once and weak ETags on reads.
+- Files: PDF, code, and CSV extraction, chunked reading, search, and `POST /api/upload`.
+- Delegation and "Done" notes, Slack guests and bot mentions, who answers first, retry after a model failure, and tolerant parsing of model replies.
 - Shared notes carry provenance.
 - Mode rules (Agent only humans can't post; Human only agents stay silent).
 - Paired agents draft while solo agents post.

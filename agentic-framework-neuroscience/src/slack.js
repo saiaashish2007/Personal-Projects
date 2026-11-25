@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
  * Slack bridge. With a bot token, the team thread is mirrored into a real
  * Slack thread, and replies from mapped Slack users flow back in as that
  * teammate. Env:
- *   SLACK_BOT_TOKEN       xoxb-… (scopes: chat:write, chat:write.customize, channels:history, channels:read, users:read)
+ *   SLACK_BOT_TOKEN       xoxb-… (scopes: app_mentions:read, chat:write, chat:write.customize, channels:history, channels:read, users:read, files:read)
  *   SLACK_SIGNING_SECRET  verifies the Events API webhook
  *   SLACK_CHANNEL_ID      channel the team thread lives in
  *   SLACK_USER_MAP        JSON map of Slack user id → teammate, e.g. {"U012ABC":"A","U034DEF":"B"}
@@ -44,6 +44,33 @@ export async function slackApi(method, body = {}, { token = slackConfig().token 
   const data = await res.json();
   if (!data.ok) throw new Error(`Slack ${method}: ${data.error ?? res.status}`);
   return data;
+}
+
+const names = new Map();
+
+/** Display name for a Slack user id (cached per instance; needs users:read). */
+export async function slackUserName(user) {
+  if (!user) return null;
+  if (names.has(user)) return names.get(user);
+  try {
+    const d = await slackApi('users.info', { user });
+    const name = d.user?.profile?.display_name || d.user?.real_name || d.user?.name || null;
+    names.set(user, name);
+    return name;
+  } catch {
+    return null;
+  }
+}
+
+/** Downloads a file shared in Slack (needs files:read). */
+export async function downloadSlackFile(file, { token = slackConfig().token } = {}) {
+  const url = file.url_private_download || file.url_private;
+  if (!url) throw new Error('Slack file has no download URL.');
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error(`Slack file download failed (${res.status}).`);
+  const type = res.headers.get('content-type') ?? '';
+  if (type.includes('text/html') && !String(file.name).toLowerCase().endsWith('.html')) throw new Error('Slack returned a login page; add the files:read scope.');
+  return Buffer.from(await res.arrayBuffer());
 }
 
 /** Verifies a Slack Events API request (v0 HMAC-SHA256, 5-minute replay window). */

@@ -3,7 +3,9 @@ import { PRESETS } from './presets.js';
 import { describeProvider } from './llm.js';
 import { mutate, readSession, drain, needsDrain } from './runtime.js';
 import { listConnectors, loadTools } from './mcp/registry.js';
-import { slackConfig, slackEnabled, verifySlackSignature } from './slack.js';
+import { slackConfig, slackEnabled, verifySlackSignature, slackUserName, downloadSlackFile } from './slack.js';
+import { buildFile, MAX_FILE_BYTES } from './files.js';
+import { newId } from './memory.js';
 
 const VIEWERS = [...PAIR_IDS, 'observer'];
 const ACCESS_CODE = process.env.ACCESS_CODE || '';
@@ -72,11 +74,54 @@ async function slackEvents(request, { store, waitUntil }) {
   }
   if (body.type === 'url_verification') return json({ challenge: body.challenge });
   const ev = body.event;
-  if (body.type !== 'event_callback' || ev?.type !== 'message' || ev.subtype || ev.bot_id || !ev.text) return json({ ok: true, ignored: true });
+  const isMessage = ev?.type === 'message' && (!ev.subtype || ev.subtype === 'file_share');
+  const isMention = ev?.type === 'app_mention';
+  if (body.type !== 'event_callback' || !(isMessage || isMention) || ev.bot_id || (!ev.text && !ev.files?.length)) return json({ ok: true, ignored: true });
   if (ev.channel !== slackConfig().channel) return json({ ok: true, ignored: 'other channel' });
-  const { result } = await mutate(store, (s) => s.ingestSlack({ eventId: body.event_id, user: ev.user, text: ev.text, threadTs: ev.thread_ts ?? null }));
+
+  const botUser = body.authorizations?.[0]?.user_id;
+  const mentionsBot = isMention || Boolean(botUser && String(ev.text ?? '').includes(`<@${botUser}>`));
+  const [userName, files] = await Promise.all([slackUserName(ev.user), slackFiles(ev.files)]);
+  const { result } = await mutate(store, (s) =>
+    s.ingestSlack({ eventId: body.event_id, ts: ev.ts, user: ev.user, userName, text: ev.text ?? '', threadTs: ev.thread_ts ?? null, mentionsBot, files })
+  );
   kick(store, waitUntil);
   return json({ ok: true, ...result });
+}
+
+async function slackFiles(list = []) {
+  const out = [];
+  for (const f of (list ?? []).slice(0, 5)) {
+    try {
+      if (f.size > MAX_FILE_BYTES) throw new Error('too large');
+      const buffer = await downloadSlackFile(f);
+      out.push(await buildFile({ id: newId('file'), name: f.name, mime: f.mimetype, buffer, by: 'Slack', source: 'slack', url: f.permalink ?? null }));
+    } catch (err) {
+      out.push({ id: newId('file'), ts: Date.now(), name: f.name, mime: f.mimetype ?? null, kind: 'error', size: f.size ?? 0, pages: null, chars: 0, truncated: false, note: `Could not read: ${err.message}`, by: 'Slack', source: 'slack', url: f.permalink ?? null, text: '' });
+    }
+  }
+  return out;
+}
+
+const UPLOAD_LIMIT = 3 * 1024 * 1024;
+
+async function upload(request, { store, waitUntil }) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: 'Send JSON: { pairId, name, type, data (base64), text? }.' }, 400);
+  }
+  const { pairId, name, type = '', data, text = '' } = body ?? {};
+  if (!name || !data) return json({ error: 'name and data (base64) are required.' }, 400);
+  const buffer = Buffer.from(String(data).replace(/^data:[^,]*,/, ''), 'base64');
+  if (!buffer.length) return json({ error: 'The file is empty.' }, 400);
+  if (buffer.length > UPLOAD_LIMIT) return json({ error: 'Files up to 3 MB can be uploaded.' }, 413);
+  const record = await buildFile({ id: newId('file'), name, mime: type, buffer, by: pairId, source: 'app' });
+  await mutate(store, (s) => s.shareFile({ pairId, record, text }));
+  kick(store, waitUntil);
+  const { text: _omit, ...meta } = record;
+  return json({ ok: true, file: meta });
 }
 
 /**
@@ -108,6 +153,8 @@ export async function handleApi(request, { store, waitUntil }) {
     if (request.method === 'GET' && route === 'presets') {
       return json(PRESETS.map(({ key, title, criticality, description, channel }) => ({ key, title, criticality, description, channel })));
     }
+
+    if (request.method === 'POST' && route === 'upload') return await upload(request, { store, waitUntil });
 
     if (request.method === 'GET' && route === 'connectors') {
       const probe = url.searchParams.get('probe') ? await loadTools({ force: true }) : null;

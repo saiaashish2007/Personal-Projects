@@ -31,7 +31,8 @@ export const CRITICALITY = {
 };
 
 export const SPEAK_THRESHOLD = 0.55;
-const MAX_OBSERVATION = 3000;
+const MAX_OBSERVATION = 12000;
+const OLD_OBSERVATION = 1500;
 
 const clamp = (x) => (Number.isFinite(x) ? Math.max(0, Math.min(1, x)) : 0);
 const snippet = (t, n = 70) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
@@ -59,13 +60,21 @@ export class Agent {
     const system = this.systemPrompt(ctx, tools);
     const ask = async (extra = '') => {
       trace.calls += 1;
-      const out = parseJson(await complete({ system, user: `${this.userPrompt(ctx, ws, scratch)}${extra}`, maxTokens: 1800 }));
+      const user = `${this.userPrompt(ctx, ws, scratch)}${extra}`;
+      let out = parseJson(await complete({ system, user, maxTokens: 3000 }));
+      if (!out) {
+        trace.calls += 1;
+        out = parseJson(
+          await complete({ system, user: `${user}\n\nYour previous reply was not valid JSON. Reply again with exactly one JSON object. Escape newlines inside strings as \\n and quotes as \\".`, maxTokens: 3000 })
+        );
+      }
       if (!out) throw new Error('The model did not return valid JSON.');
       return out;
     };
 
     try {
       let final = null;
+      let nudges = 0;
       while (!final && trace.calls < budget - 1) {
         const out = await ask();
         if (trace.calls === 1) {
@@ -74,6 +83,12 @@ export class Agent {
           if (!ctx.mustRespond && trace.motivation < SPEAK_THRESHOLD) {
             return this.result({ speak: false, rationale: String(out.thought ?? '') }, ws, trace);
           }
+        }
+        const missing = nudges >= 3 ? null : this.missingRequiredStep(ctx, scratch);
+        if (out.final && missing && trace.calls < budget - 2) {
+          nudges += 1;
+          scratch.push({ thought: 'Tried to finish early.', tool: '(guard)', args: {}, observation: `Not done yet: ${missing}` });
+          continue;
         }
         if (out.final) final = out.final;
         else if (out.action?.tool) {
@@ -111,8 +126,9 @@ export class Agent {
       }
       return this.result(final, ws, trace);
     } catch (err) {
-      console.error(`[agent ${this.name}] LLM turn failed, using offline fallback:`, err.message);
-      return { ...offlineThink(this, ctx, new Workspace(ctx.workspace)), error: err.message.slice(0, 300) };
+      // A failed model turn stays silent rather than posting templated text; the session retries or hands off.
+      console.error(`[agent ${this.name}] LLM turn failed:`, err.message);
+      return { motivation: 0, speak: false, message: '', rationale: '', clarifying: false, effects: [], error: err.message.slice(0, 300), trace: { ...trace, ms: Date.now() - trace.startedAt } };
     }
   }
 
@@ -127,6 +143,17 @@ export class Agent {
       effects: ws.effects,
       trace: { ...trace, ms: Date.now() - trace.startedAt },
     };
+  }
+
+  /** A step the trigger clearly requires that the Worker has not taken yet, or null. */
+  missingRequiredStep(ctx, scratch) {
+    const used = (name) => scratch.some((s) => s.tool === name && !String(s.observation).startsWith('ERROR'));
+    if (ctx.review && !used('github.get_pr_diff')) return `you were asked to review ${ctx.review.url}; call github.get_pr_diff with {"url":"${ctx.review.url}"} and review the actual changes before answering.`;
+    if (ctx.review && !used('team.submit_work')) return 'submit the review as a deliverable with team.submit_work (Summary, Blocking issues, Suggestions, Tests to add, Verdict).';
+    if (ctx.review && !scratch.some((s) => s.tool === 'github.create_pr_review')) return `queue the review for posting with github.create_pr_review {"url":"${ctx.review.url}","event":"COMMENT" or "REQUEST_CHANGES" or "APPROVE","body":"<the review summary and blocking issues>"}; it waits for a human to approve.`;
+    const fileId = String(ctx.trigger.text ?? '').match(/\[(file_\w+)\]/)?.[1];
+    if (fileId && !used('team.read_file')) return `a file was shared (${fileId}); read it with team.read_file before answering.`;
+    return null;
   }
 
   needsReview(ctx, final, ws) {
@@ -150,7 +177,7 @@ export class Agent {
     if (!tool) return `ERROR: Unknown tool "${name}". Use only the tools listed.`;
     try {
       if (tool.readOnly) return clip(await callExternal(name, args));
-      const policy = externalWritePolicy({ mode: ctx.mode, criticalityRank: ctx.criticalityRank });
+      const policy = externalWritePolicy({ mode: ctx.mode, criticalityRank: ctx.criticalityRank, tool: name });
       if (policy === 'run') {
         const out = clip(await callExternal(name, args));
         ws.effects.push({ type: 'external_done', tool: name, args, result: out.slice(0, 400) });
@@ -177,7 +204,7 @@ export class Agent {
       .map((t) => `- ${t.name} ${t.args}${t.readOnly === false && t.server ? ' [writes to an outside platform]' : ''}: ${t.description}`)
       .join('\n');
     return [
-      `You are ${this.name}, the personal AI agent of ${this.humanName} (${this.focus}) in the #${ctx.channel} team channel. Teammate ids: ${ctx.teamLine}.`,
+      `You are ${this.name}, the personal AI agent of ${this.humanName} (${this.focus}) in the #${ctx.channel} channel of a software company's Slack. Teammate ids: ${ctx.teamLine}.`,
       'You run as a crew of three subagents: a Planner (decide whether to act; plan steps), a Worker (do the work with tools), and a Reviewer (checks your output separately). In this conversation you are the Planner and the Worker.',
       destination,
       `Task criticality: ${crit.label}. ${crit.rule}`,
@@ -187,7 +214,13 @@ export class Agent {
       "- When work splits naturally, create tasks with owners and tell the other agents with team.message_agent. Share work in progress with team.message_agent and finished work with team.submit_work.",
       "- Your human's private notes are yours to reason with. Share a private fact with the team only when it matters for the task, and say whose information it is.",
       "- Save useful facts with team.remember. Your human's thoughts and your work log are saved to private memory automatically.",
+      '- You are a teammate in a real Slack thread. People outside the three pairs can post (shown as "Name (Slack)"). If a message is addressed to you, to the team, or asks a question nobody has answered, reply to that person by name in the thread. Keep it conversational.',
+      '- Share context: when someone asks what is going on or for a status, use team.list_tasks and summarize who owns what, what is blocked, and what is done, citing who said or decided it.',
+      '- Delegate with team.assign_task when work belongs to a teammate (by skill or because you are busy). When you finish a task, team.submit_work posts a "Done" note to the thread automatically, so your own message can just say what changed and what is next.',
+      '- Files people share are listed under SHARED FILES. Read them with team.read_file (page by page for long PDFs) before answering about them, and cite the file and page.',
+      '- Code review (when asked to review a PR or a GitHub link appears): github.get_pull_request, then github.get_pr_diff, and github.get_file for surrounding code when the diff is not enough; check github.list_pr_comments so you do not repeat others. Check correctness and edge cases, error handling, security (secrets, injection, auth), performance, tests, and readability. Submit the review as a deliverable with sections: Summary, Blocking issues (file:line + why + fix), Suggestions, Tests to add, Verdict (approve / request changes). Then propose posting it with github.create_pr_review; that write waits for a human, so say it is queued.',
       '- If the request is underspecified, ask ONE targeted clarifying question (final.clarifying = true) instead of guessing.',
+      '- Never say a tool, file, or platform is unavailable or unreachable unless a tool call in this turn actually returned an ERROR. If you did not try, try.',
       '- Do not repeat what someone just said. If you have nothing new to add, finish with speak false.',
       '- Team messages: under 120 words, plain language. Deliverables can be as long as they need to be.',
       ctx.teaching ? '- Teaching mode is on: write final.rationale as a short explanation your human can learn from.' : '',
@@ -206,7 +239,7 @@ export class Agent {
     const fmt = (msgs) => msgs.map((m) => `${m.authorLabel}: ${m.text}`).join('\n');
     const t = ctx.trigger;
     const triggerLine = {
-      group: `${t.authorLabel ?? 'Someone'} posted in the team thread: "${t.text}"`,
+      group: `${t.authorLabel ?? 'Someone'} posted in the team thread: "${t.text}"${t.mentionsBot ? ' (they @mentioned the team bot, so answer them)' : ''}`,
       round: 'The team asked every agent to take a turn: look at the board and move the work forward.',
       private: `${this.humanName} sent you a private DM: "${t.text}"`,
       agent_dm: `${t.fromLabel}'s agent sent you a direct message: "${t.text}". Do the work it asks for. Reply with team.message_agent only if they need an answer.`,
@@ -214,18 +247,20 @@ export class Agent {
       revise: `${this.humanName} asked you to revise your draft "${t.text}". Their feedback: "${t.feedback}". Redo the work accordingly.`,
       friction: `${this.humanName} flagged this message as a problem: "${t.text}". Ask them one question to find out what went wrong.`,
     }[t.kind] ?? `Trigger: ${t.kind} ${t.text ?? ''}`;
+    const recentFrom = scratch.length - 2;
     const steps = scratch
-      .map((s, i) =>
-        s.review
-          ? `Reviewer verdict: ${s.review.verdict}. Issues: ${s.review.issues.join('; ')}`
-          : `Step ${i + 1}: ${s.thought}\nAction: ${s.tool} ${JSON.stringify(s.args).slice(0, 400)}\nObservation: ${s.observation}`
-      )
+      .map((s, i) => {
+        if (s.review) return `Reviewer verdict: ${s.review.verdict}. Issues: ${s.review.issues.join('; ')}`;
+        const obs = i < recentFrom && s.observation.length > OLD_OBSERVATION ? `${s.observation.slice(0, OLD_OBSERVATION)}… [older observation shortened; call the tool again if you need it]` : s.observation;
+        return `Step ${i + 1}: ${s.thought}\nAction: ${s.tool} ${JSON.stringify(s.args).slice(0, 400)}\nObservation: ${obs}`;
+      })
       .join('\n\n');
     return [
       `TASK: ${ctx.task?.title ?? '(none)'}\n${ctx.task?.description ?? ''}`,
       ctx.task?.subtasks?.length ? `SUGGESTED SUBTASKS:\n${ctx.task.subtasks.map((s) => `- ${s}`).join('\n')}` : '',
       `TEAM: ${ctx.teamSummary}`,
       `TEAM BOARD:\n${ctx.boardText}`,
+      `SHARED FILES:\n${ctx.filesText ?? '(none)'}`,
       `TEAM MEMORY:\n${ctx.globalMemory}`,
       `${this.humanName.toUpperCase()}'S PRIVATE MEMORY (only you can see this):\n${ctx.pairMemory}`,
       `TEAM THREAD (latest):\n${fmt(ctx.groupThread) || '(no messages yet)'}`,
@@ -233,6 +268,10 @@ export class Agent {
       `PRIVATE DM WITH ${this.humanName.toUpperCase()}:\n${fmt(ctx.pairThread) || '(none)'}`,
       ctx.lastDraft ? `YOUR LAST DRAFT: ${ctx.lastDraft.text}\nIts rationale: ${ctx.lastDraft.rationale}` : '',
       `TRIGGER: ${triggerLine}`,
+      ctx.primary ? 'You are answering this message first for the team. The other agents will see your reply and only add what is new, so give a complete answer.' : '',
+      ctx.review
+        ? `CODE REVIEW REQUEST for ${ctx.review.url}. Do the full review: github.get_pull_request, then github.get_pr_diff (required), then github.get_file only if you need context. Submit the review with team.submit_work (task_id is optional; omit it to file a new board task). Then call github.create_pr_review with the same verdict so a human can approve posting it. In the thread, give the verdict and the top issues in a few lines.`
+        : '',
       steps ? `YOUR STEPS SO FAR THIS TURN:\n${steps}` : '',
       'Reply with your next JSON object.',
     ]

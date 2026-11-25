@@ -10,14 +10,22 @@ export const provider = CURSOR_KEY ? 'cursor' : ANTHROPIC_KEY ? 'anthropic' : OP
 
 const DEFAULT_MODELS = { cursor: 'composer-2.5', anthropic: 'claude-sonnet-4-5', openai: 'gpt-4o-mini', offline: 'offline-heuristic' };
 const model = process.env.LLM_MODEL || DEFAULT_MODELS[provider];
-const TIMEOUT_MS = 45000;
+const TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS || 90000);
 
 export function describeProvider() {
   return { provider, model };
 }
 
 export async function complete({ system, user, maxTokens = 700 }) {
-  if (provider === 'cursor') return completeWithCursor(`${system}\n\n---\n\n${user}`);
+  if (provider === 'cursor') {
+    try {
+      return await completeWithCursor(`${system}\n\n---\n\n${user}`);
+    } catch (err) {
+      // One retry for timeouts and transient run failures; a second failure surfaces.
+      if (!/timed out|status "(error|cancelled|expired)"|ECONNRESET|fetch failed/i.test(err.message)) throw err;
+      return completeWithCursor(`${system}\n\n---\n\n${user}`);
+    }
+  }
 
   if (provider === 'anthropic') {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -105,9 +113,33 @@ export function parseJson(text) {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end <= start) return null;
+  const body = text.slice(start, end + 1);
   try {
-    return JSON.parse(text.slice(start, end + 1));
+    return JSON.parse(body);
   } catch {
-    return null;
+    try {
+      return JSON.parse(escapeControlCharsInStrings(body));
+    } catch {
+      return null;
+    }
   }
+}
+
+// Models often put raw newlines and tabs inside long string values (markdown deliverables).
+function escapeControlCharsInStrings(s) {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (const ch of s) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      else if (ch === '\n') { out += '\\n'; continue; }
+      else if (ch === '\r') { out += '\\r'; continue; }
+      else if (ch === '\t') { out += '\\t'; continue; }
+    } else if (ch === '"') inString = true;
+    out += ch;
+  }
+  return out;
 }

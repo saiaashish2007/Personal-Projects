@@ -39,12 +39,13 @@ export class GlobalMemory {
 
   // ---------- task board ----------
 
-  addTask({ id = newId('task'), title, detail = '', owner = null, source }) {
+  addTask({ id = newId('task'), title, detail = '', owner = null, due = null, source }) {
     const task = {
       id,
       title: clip(String(title).trim(), 120),
       detail: clip(String(detail ?? '').trim(), 600),
       owner,
+      due,
       status: owner ? 'doing' : 'todo',
       source,
       artifacts: [],
@@ -92,7 +93,7 @@ export class GlobalMemory {
   boardPrompt(limit = 20) {
     const lines = this.tasks.slice(-limit).map((t) => {
       const arts = t.artifacts.length ? ` · ${t.artifacts.length} deliverable(s): ${t.artifacts.map((a) => `"${a.title}" [${a.id}]`).join(', ')}` : '';
-      return `- [${t.id}] ${t.title} — ${t.status}${t.owner ? `, owner ${t.owner}` : ', unassigned'}${arts}`;
+      return `- [${t.id}] ${t.title} — ${t.status}${t.owner ? `, owner ${t.owner}` : ', unassigned'}${t.due ? `, due ${t.due}` : ''}${arts}`;
     });
     return lines.length ? lines.join('\n') : '(no tasks yet)';
   }

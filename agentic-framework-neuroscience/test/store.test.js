@@ -13,7 +13,7 @@ function fakeBlobSdk() {
     async get(pathname) {
       const b = blobs.get(pathname);
       if (!b) return null;
-      return { statusCode: 200, stream: new Response(b.body).body, blob: { etag: b.etag } };
+      return { statusCode: 200, stream: new Response(b.body).body, blob: { etag: `W/${b.etag}` } };
     },
     async put(pathname, body, { allowOverwrite, ifMatch }) {
       const cur = blobs.get(pathname);

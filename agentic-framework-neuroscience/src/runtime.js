@@ -5,8 +5,8 @@ import { postToSlack } from './slack.js';
 import { newId } from './memory.js';
 
 const MAX_RETRIES = 8;
-const LEASE_MS = 150_000;
-const DEFAULT_BUDGET_MS = Number(process.env.DRAIN_BUDGET_MS || 60_000);
+const LEASE_MS = 300_000;
+const DEFAULT_BUDGET_MS = Number(process.env.DRAIN_BUDGET_MS || 120_000);
 
 /**
  * Loads the session, applies `fn`, and saves it with optimistic concurrency.

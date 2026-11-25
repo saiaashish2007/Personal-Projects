@@ -3,6 +3,7 @@ import { GlobalMemory, PairMemory, newId } from './memory.js';
 import { describeProvider } from './llm.js';
 import { isTeamWrite } from './tools.js';
 import { slackEnabled, slackConfig } from './slack.js';
+import { MAX_FILES, fileSummary } from './files.js';
 
 export const PAIR_IDS = ['A', 'B', 'C'];
 export const MODES = {
@@ -17,7 +18,7 @@ const THINKING_TTL_MS = 3 * 60 * 1000;
 const MAX_EVENTS = 500;
 const MAX_TRACES = 30;
 const DAILY_LLM_CAP = Number(process.env.LLM_DAILY_CAP || 300);
-const MAX_CALLS_PER_TURN = Number(process.env.MAX_CALLS_PER_TURN || 6);
+const MAX_CALLS_PER_TURN = Number(process.env.MAX_CALLS_PER_TURN || 10);
 const WORKSPACE = process.env.WORKSPACE_NAME || 'Northwind Labs';
 
 const DEFAULT_PAIRS = {
@@ -66,6 +67,7 @@ export class Session {
     this.queue = [];
     this.lease = null;
     this.slack = { threadTs: null, seen: [], posted: {} };
+    this.files = [];
     this.changed('reset');
   }
 
@@ -91,6 +93,7 @@ export class Session {
     this.queue = s.queue ?? [];
     this.lease = s.lease ?? null;
     this.slack = s.slack ?? { threadTs: null, seen: [], posted: {} };
+    this.files = s.files ?? [];
   }
 
   snapshot() {
@@ -108,6 +111,7 @@ export class Session {
       approvals: this.approvals,
       frictions: this.frictions,
       modeHistory: this.modeHistory,
+      files: this.files,
     };
   }
 
@@ -276,9 +280,9 @@ export class Session {
     return kind === 'human' ? p.humanName : `${p.agentName} (${firstName(p.humanName)}'s agent)`;
   }
 
-  addMessage({ channel, pairId = null, kind, text, rationale = '', viaDraft = null, clarifying = false, source = 'app', traceId = null, mirror = true }) {
-    const authorLabel = kind === 'system' ? 'System' : this.label(pairId, kind);
-    const msg = { id: newId('m'), ts: Date.now(), channel, pairId, kind, authorLabel, text, rationale, viaDraft, clarifying, source, traceId };
+  addMessage({ channel, pairId = null, kind, text, rationale = '', viaDraft = null, clarifying = false, source = 'app', traceId = null, mirror = true, label = null, files = [] }) {
+    const authorLabel = label ?? (kind === 'system' ? 'System' : this.label(pairId, kind));
+    const msg = { id: newId('m'), ts: Date.now(), channel, pairId, kind, authorLabel, text, rationale, viaDraft, clarifying, source, traceId, files };
     if (channel === 'group') {
       this.group.push(msg);
       if (mirror && source !== 'slack' && slackEnabled()) this.schedule({ kind: 'slack_out', messageId: msg.id });
@@ -288,6 +292,29 @@ export class Session {
 
   systemMessage(text, { mirror = true } = {}) {
     return this.addMessage({ channel: 'group', kind: 'system', text, mirror });
+  }
+
+  // ---------- files ----------
+
+  /** Stores an extracted file (see src/files.js) and keeps the newest MAX_FILES. */
+  addFile(record) {
+    this.files = this.files.filter((f) => f.id !== record.id);
+    this.files.push(record);
+    if (this.files.length > MAX_FILES) this.files.splice(0, this.files.length - MAX_FILES);
+    this.changed('file_shared', { id: record.id, name: record.name, kind: record.kind, by: record.by, source: record.source });
+    return record;
+  }
+
+  /** A teammate shares a file in the team thread (with an optional message), so agents see it and react. */
+  shareFile({ pairId, record, text = '' }) {
+    this.requirePair(pairId);
+    this.requireTask();
+    if (this.pairs[pairId].mode === 'agent') throw new SessionError('You are in Agent only mode. Switch modes to post.');
+    this.addFile({ ...record, by: this.pairs[pairId].humanName });
+    const body = `${text.trim() ? `${text.trim()}\n` : ''}Shared a file: ${record.name} [${record.id}]`;
+    const msg = this.post({ pairId, channel: 'group', text: body });
+    msg.files = [record.id];
+    return msg;
   }
 
   sendAgentDm(from, to, text, depth) {
@@ -317,6 +344,14 @@ export class Session {
     if (job.kind === 'group') {
       if (!this.task) return [];
       ids = this.activeAgentPairs().filter((id) => !(job.trigger.fromAgent && job.trigger.pairId === id));
+      if (job.followUp) {
+        ids = ids.filter((id) => !(job.skip ?? []).includes(id));
+      } else if (job.trigger.kind === 'group' && !job.trigger.fromAgent && ids.length > 1) {
+        // One agent answers a person first; the rest see that answer and only add what is new.
+        job.primary = this.primaryResponder(job.trigger, ids);
+        ids = [job.primary];
+        extra.primary = true;
+      }
     } else if (['private', 'revise'].includes(job.kind)) {
       if (this.pairs[job.pairId].mode === 'human') return [];
       ids = [job.pairId];
@@ -338,6 +373,15 @@ export class Session {
         ctx: { ...this.buildCtx(id, job.trigger, extra), offline: !live || this.usage.calls >= DAILY_LLM_CAP },
       };
     });
+  }
+
+  /** The agent a person is talking to: named, owner of a task the message names, or the lead agent. */
+  primaryResponder(trigger, ids) {
+    const text = String(trigger.text ?? '').toLowerCase();
+    const named = ids.find((id) => text.includes(this.pairs[id].agentName.toLowerCase()) || text.includes(`@${firstName(this.pairs[id].humanName).toLowerCase()}`));
+    if (named) return named;
+    const owner = this.global.tasks.find((t) => t.owner && ids.includes(t.owner) && t.status !== 'done' && text.includes(t.title.toLowerCase().slice(0, 24)))?.owner;
+    return owner ?? ids[0];
   }
 
   setProgress(pairId, label) {
@@ -366,6 +410,14 @@ export class Session {
         posted = posted ?? msg;
       }
       this.changed('agent_turn', { trigger: job.trigger.kind, depth: job.depth, scores, posted: posted?.pairId ?? null });
+      if (job.primary && !posted) {
+        if (outs[job.primary]?.error && !job.retried) {
+          this.schedule({ kind: 'group', depth: job.depth, trigger: job.trigger, retried: true });
+        } else {
+          this.schedule({ kind: 'group', depth: job.depth, trigger: job.trigger, followUp: true, skip: [job.primary] });
+        }
+        return;
+      }
       if (posted && job.depth + 1 < MAX_AGENT_CHAIN) {
         this.schedule({ kind: 'group', depth: job.depth + 1, trigger: { kind: 'group', text: posted.text, pairId: posted.pairId, fromAgent: true, messageId: posted.id, authorLabel: posted.authorLabel } });
       }
@@ -446,13 +498,25 @@ export class Session {
     const by = { kind: 'agent', pairId, humanApproved };
     for (const e of effects) {
       if (e.type === 'create_task' && !this.global.task(e.id)) {
-        this.global.addTask({ id: e.id, title: e.title, detail: e.detail, owner: e.owner, source: by });
+        this.global.addTask({ id: e.id, title: e.title, detail: e.detail, owner: e.owner, due: e.due ?? null, source: by });
       } else if (e.type === 'update_task') {
         this.global.updateTask(e.taskId, { status: e.status, owner: e.owner, note: e.note, by });
+      } else if (e.type === 'assign_task') {
+        const t = this.global.task(e.taskId);
+        if (!t || t.owner === e.owner) continue;
+        this.global.updateTask(e.taskId, { owner: e.owner, status: t.status === 'todo' ? 'doing' : undefined, note: e.note ? `assigned: ${e.note}` : 'assigned', by });
+        const to = this.pairs[e.owner];
+        this.systemMessage(`${this.pairs[pairId].agentName} assigned "${t.title}" to ${to.humanName}${e.note ? `: ${e.note}` : '.'}`);
+        if (e.owner !== pairId) this.sendAgentDm(pairId, e.owner, `You now own "${t.title}" (${t.id}).${e.note ? ` ${e.note}` : ''} Please start, and post when it is done.`, 1);
       } else if (e.type === 'submit_work') {
         const status = rank >= 2 && !humanApproved ? 'needs_signoff' : 'active';
         if (this.global.addArtifact(e.taskId, { title: e.title, content: e.content, by, status })) {
+          const t = this.global.task(e.taskId);
+          const wasDone = t?.status === 'done';
           this.global.updateTask(e.taskId, { status: 'done', by });
+          if (t && !wasDone) {
+            this.systemMessage(`Done: "${t.title}" by ${this.pairs[pairId].agentName}. Deliverable "${e.title}" is on the board${status === 'needs_signoff' ? ' and needs a human sign-off' : ''}.`);
+          }
         }
       } else if (e.type === 'remember') {
         this.applyMemory(pairId, [{ scope: 'global', type: e.memType, text: e.text }], { humanApproved });
@@ -551,7 +615,8 @@ export class Session {
     const pair = this.pairs[pairId];
     const rank = CRITICALITY[this.task?.criticality]?.rank ?? 1;
     const named = (trigger.text ?? '').toLowerCase();
-    const mentioned = named.includes(pair.agentName.toLowerCase()) || named.includes(`@${firstName(pair.humanName).toLowerCase()}`);
+    const botMentioned = Boolean(trigger.mentionsBot) && this.activeAgentPairs()[0] === pairId;
+    const mentioned = botMentioned || named.includes(pair.agentName.toLowerCase()) || named.includes(`@${firstName(pair.humanName).toLowerCase()}`);
     const notes = this.pairMem[pairId].notes;
     return {
       task: this.task,
@@ -562,7 +627,9 @@ export class Session {
       lastDraft: extra.lastDraft ?? null,
       criticalityRank: rank,
       budget: MAX_CALLS_PER_TURN,
-      mustRespond: ['private', 'explain', 'revise', 'friction', 'agent_dm'].includes(trigger.kind) || mentioned,
+      primary: Boolean(extra.primary),
+      review: reviewRequest(trigger.text),
+      mustRespond: ['private', 'explain', 'revise', 'friction', 'agent_dm'].includes(trigger.kind) || mentioned || (Boolean(extra.primary) && /\?|review|please|can you|could you/i.test(trigger.text ?? '')),
       teamLine: PAIR_IDS.map((id) => `${id} = ${this.pairs[id].humanName} (${this.pairs[id].title}; agent ${this.pairs[id].agentName})${id === pairId ? ' ← you' : ''}`).join('; '),
       teamSummary: PAIR_IDS.map((id) => `${this.pairs[id].humanName}: ${MODES[this.pairs[id].mode].label}`).join('; '),
       groupThread: this.group.slice(-20),
@@ -571,12 +638,15 @@ export class Session {
       globalMemory: this.global.toPrompt(),
       boardText: this.global.boardPrompt(),
       pairMemory: this.pairMem[pairId].toPrompt(),
+      filesText: this.files.length ? this.files.map(fileSummary).join('\n') : '(none)',
       workspace: {
         pairId,
         pairIds: PAIR_IDS,
         board: this.global.tasks,
         memory: this.global.active(),
         notes: notes.filter((n) => n.type !== 'worklog'),
+        files: this.files,
+        people: Object.fromEntries(PAIR_IDS.map((id) => [id, this.pairs[id].humanName])),
         mode: pair.mode,
         criticality: this.task?.criticality,
       },
@@ -689,18 +759,41 @@ export class Session {
     this.slack.posted[messageId] = ts;
   }
 
-  /** A message from the mirrored Slack thread, posted by a mapped Slack user. */
-  ingestSlack({ eventId, user, text, threadTs }) {
-    if (this.slack.seen.includes(eventId)) return { ignored: 'duplicate' };
-    this.slack.seen.push(eventId);
-    if (this.slack.seen.length > 200) this.slack.seen.splice(0, this.slack.seen.length - 200);
-    const pairId = slackConfig().userMap[user];
-    if (!pairId || !PAIR_IDS.includes(pairId)) return { ignored: 'unmapped user' };
+  /**
+   * A message from Slack: a reply in the mirrored thread, or a top-level message
+   * that @mentions the bot. Mapped users speak as their teammate; anyone else in
+   * the channel joins the thread as a guest, and the agents answer them too.
+   * `files` are already-extracted records from src/files.js.
+   */
+  ingestSlack({ eventId, ts = null, user, userName = null, text, threadTs, mentionsBot = false, files = [] }) {
+    const keys = [eventId, ts].filter(Boolean);
+    if (keys.some((k) => this.slack.seen.includes(k))) return { ignored: 'duplicate' };
+    this.slack.seen.push(...keys);
+    if (this.slack.seen.length > 300) this.slack.seen.splice(0, this.slack.seen.length - 300);
     if (!this.task) return { ignored: 'no task' };
-    if (this.slack.threadTs && threadTs !== this.slack.threadTs) return { ignored: 'other thread' };
-    if (this.pairs[pairId].mode === 'agent') return { ignored: 'agent only mode' };
-    const msg = this.post({ pairId, channel: 'group', text, source: 'slack' });
-    return { posted: msg.id };
+    const inThread = this.slack.threadTs && threadTs === this.slack.threadTs;
+    if (!inThread && !mentionsBot) return { ignored: 'other thread' };
+
+    const clean = String(text ?? '').replace(/<@[A-Z0-9]+>/g, '@Triad').trim();
+    const pairId = slackConfig().userMap[user];
+    const mapped = pairId && PAIR_IDS.includes(pairId);
+    const who = mapped ? this.pairs[pairId].humanName : userName || 'Slack user';
+    for (const f of files) this.addFile({ ...f, by: who, source: 'slack' });
+    const fileLine = files.length ? `${clean ? '\n' : ''}Shared: ${files.map((f) => `${f.name} [${f.id}]`).join(', ')}` : '';
+    const body = `${clean}${fileLine}`.trim();
+    if (!body) return { ignored: 'empty' };
+
+    if (mapped && this.pairs[pairId].mode !== 'agent') {
+      const msg = this.post({ pairId, channel: 'group', text: body, source: 'slack' });
+      msg.files = files.map((f) => f.id);
+      const job = this.queue.find((j) => j.kind === 'group' && j.trigger?.messageId === msg.id);
+      if (job && mentionsBot) job.trigger.mentionsBot = true;
+      return { posted: msg.id, as: pairId };
+    }
+    const msg = this.addMessage({ channel: 'group', kind: 'human', text: body, source: 'slack', label: `${who} (Slack)`, files: files.map((f) => f.id) });
+    this.changed('human_post', { pairId: null, guest: who, channel: 'group', messageId: msg.id, source: 'slack' });
+    this.schedule({ kind: 'group', depth: 0, trigger: { kind: 'group', text: body, pairId: null, fromAgent: false, messageId: msg.id, authorLabel: msg.authorLabel, mentionsBot } });
+    return { posted: msg.id, as: 'guest' };
   }
 
   // ---------- friction ----------
@@ -815,6 +908,7 @@ export class Session {
       board: this.global.tasks,
       global: this.global.active(),
       approvals: this.approvals.slice(-40),
+      files: this.files.map(({ text, ...meta }) => ({ ...meta, preview: text.slice(0, 280) })),
       analytics: this.analytics(),
       queued: this.queue.length,
     };
@@ -842,6 +936,11 @@ export class Session {
 
 function describeEffects(effects = []) {
   return effects.map((e) => (e.type === 'submit_work' ? `submit "${e.title}"` : e.type === 'create_task' ? `create task "${e.title}"` : e.tool ?? e.type)).join(', ');
+}
+
+function reviewRequest(text = '') {
+  const m = String(text).match(/github\.com\/([\w.-]+\/[\w.-]+)\/pull\/(\d+)/);
+  return m ? { repo: m[1], number: Number(m[2]), url: `https://github.com/${m[1]}/pull/${m[2]}` } : null;
 }
 
 function today() {
