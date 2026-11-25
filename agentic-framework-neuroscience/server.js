@@ -8,7 +8,7 @@ import { describeProvider } from './src/llm.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8790);
-const store = createStore({ file: path.join(root, 'data', 'session.json') });
+const store = createStore({ file: process.env.DATA_FILE || path.join(root, 'data', 'session.json') });
 const waitUntil = (promise) => promise.catch((err) => console.error('[jobs]', err));
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
@@ -50,5 +50,5 @@ server.listen(PORT, '127.0.0.1', () => {
   const { provider, model } = describeProvider();
   console.log(`Triad running at http://127.0.0.1:${PORT}`);
   console.log(`  Agents: ${provider === 'offline' ? 'offline heuristic agents (set CURSOR_API_KEY in .env for LLM agents)' : `${provider} · ${model}`}`);
-  console.log(`  Storage: ${process.env.DATABASE_URL || process.env.POSTGRES_URL ? 'Postgres' : 'local file (data/session.json)'}`);
+  console.log(`  Storage: ${store.kind}${store.file ? ` (${path.relative(root, store.file)})` : ''}`);
 });

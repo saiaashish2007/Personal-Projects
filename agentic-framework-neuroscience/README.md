@@ -25,6 +25,9 @@ The project has three parts:
   - [Friction and recovery](#friction-and-recovery)
   - [Teaching mode](#teaching-mode)
   - [Analytics and agency estimate](#analytics-and-agency-estimate)
+  - [Agent crew, team board, and tools](#agent-crew-team-board-and-tools)
+  - [Connectors (MCP) and approvals](#connectors-mcp-and-approvals)
+  - [Slack bridge](#slack-bridge)
 - [Interface walkthrough](#interface-walkthrough)
 - [Task presets](#task-presets)
 - [Running a study session](#running-a-study-session)
@@ -229,6 +232,56 @@ The observer view and the export compute, per pair:
 
 ---
 
+### Agent crew, team board, and tools
+
+Each teammate's agent runs three subagents on every turn (`src/agent.js`):
+
+1. **Planner** scores how much the trigger needs this agent (0–1) and writes a short plan. Below `SPEAK_THRESHOLD` (0.55), and unless someone asked it directly, it stays quiet.
+2. **Worker** loops think → tool call → observation for up to about 6 steps, then returns a final message.
+3. **Reviewer** checks anything that reaches the team (a deliverable, or a message on an operational or higher task) for accuracy, completeness, and stakes. A `revise` verdict gives the Worker up to two more attempts.
+
+The **team board** (`view.board`) is the shared list of tasks, each with an owner, a status (`todo` / `doing` / `blocked` / `done`), a log, and attached deliverables. The Worker uses these built-in tools (`src/tools.js`):
+
+| Tool | What it does |
+|---|---|
+| `team.create_task`, `team.claim_task`, `team.update_task` | Split the work, take ownership, change status |
+| `team.submit_work` | Attach the finished deliverable (markdown) to a task and mark it done |
+| `team.read_task`, `team.search_memory` | Read a task and its deliverables; search memory, the board, and private notes |
+| `team.message_agent` | Direct message to another teammate's agent (shown in the agent channel) |
+| `team.remember` | Save a fact, decision, plan, or question to private or team memory |
+| `team.ask_my_human` | Ask the agent's own human a question in their DM |
+
+Tools run against a working copy of the session, so an agent reads its own writes within a turn. The writes are applied afterwards in one transaction, which keeps slow LLM loops outside the state lock. Every turn stores a trace (plan, each tool call and observation, review) that the observer view and the export show.
+
+### Connectors (MCP) and approvals
+
+Outside platforms are reached through one MCP interface (`src/mcp/`): built-in servers, remote Streamable HTTP servers, and local stdio servers all expose `listTools` / `callTool`. `GET /api/connectors` lists them with their status; `?probe=1` connects and lists their tools.
+
+| Connector | Transport | Needs |
+|---|---|---|
+| Web reader | Built in (read-only; private and internal addresses are blocked) | Nothing |
+| Slack | Built in | `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID` (see below) |
+| GitHub | GitHub's remote MCP server | `GITHUB_TOKEN` |
+| Linear | Linear's remote MCP server | `LINEAR_API_KEY` |
+| Notion | Local stdio server (`npm start` only, not on Vercel) | `NOTION_TOKEN` |
+| Google Drive, Jira, anything else | Your MCP server | An entry in `MCP_SERVERS` or `mcp.config.json` |
+
+```json
+[{ "id": "jira", "label": "Jira", "url": "https://…/mcp", "headers": { "Authorization": "Bearer ${JIRA_TOKEN}" } }]
+```
+
+Read tools always run. Tools that change an outside platform follow the task's stakes (`externalWritePolicy` in `src/tools.js`):
+
+- An agent working alone on an ephemeral or operational task runs the write immediately.
+- In Human + agent mode, the write is attached to the agent's draft for its human to approve.
+- Otherwise the write goes to the **approvals** list (`view.approvals`), and any present human approves or rejects it with the `decideAction` action. Approved writes run in the background, and the result is logged to the agent's private memory.
+
+### Slack bridge
+
+With `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` set, the team thread is mirrored into a Slack thread (agent messages post under the agent's name). Replies in that thread from users listed in `SLACK_USER_MAP` (`{"U012ABC":"A"}`) come back in as that teammate, and agents react to them. Point the Slack app's Event Subscriptions at `/api/slack/events`; requests are verified with `SLACK_SIGNING_SECRET` and a 5-minute replay window. Bot scopes: `chat:write`, `chat:write.customize`, `channels:history`, `channels:read`.
+
+---
+
 ## Interface walkthrough
 
 The interface follows the "Evreghen Command Center" design system: a warm off-white workspace, a dark frosted-glass sidebar and top bar, orange for actions and live state, and soft status badges (gray Human only, purple Human + agent, blue Agent only).
@@ -316,23 +369,26 @@ Browser (public/app.js)
    │                                                                → applyJob (save drafts / posts / memory)
    └─ GET /api/state?as=<viewer>&v=<version> ◀── per-viewer view, or { unchanged } if the version matches
                                        │
-                          Store (src/store.js): Postgres on Vercel, JSON file locally
+                          Store (src/store.js): Postgres or Vercel Blob in production, JSON file locally
 ```
 
 | File | Responsibility |
 |---|---|
 | `server.js` | Local Node server: static files from `public/`, and routes `/api/*` into the shared handler. |
-| `api/*.js` | Vercel Functions (`state`, `action`, `config`, `presets`, `export`). All call the same handler. |
-| `src/http.js` | Framework-free request handler (Web `Request` → `Response`): the access-code gate, actions, per-viewer state, export. |
-| `src/runtime.js` | `mutate()` (optimistic-concurrency transaction around a Session) and `runJobs()` (runs queued agent turns outside the transaction). |
-| `src/store.js` | Versioned snapshot storage: `PostgresStore` (Neon, `DATABASE_URL`) or `FileStore` (`data/session.json`). |
-| `src/session.js` | The orchestrator: modes, group and private turns (as two-phase jobs), drafts, memory writes, sign-off, friction and recovery, analytics, per-viewer views, the LLM usage cap. |
-| `src/agent.js` | Agent roles, criticality rules, the speaking threshold, LLM prompts (JSON output), and offline heuristics. |
+| `api/*.js` | Vercel Functions (`state`, `action`, `config`, `presets`, `export`, `connectors`, `slack/events`). All call the same handler. |
+| `src/http.js` | Framework-free request handler (Web `Request` → `Response`): the access-code gate, actions, per-viewer state, connectors, the Slack webhook, export. |
+| `src/runtime.js` | `mutate()` (optimistic-concurrency transaction around a Session) and `drain()` (runs the persisted job queue under a lease, outside the transaction). |
+| `src/store.js` | Versioned snapshot storage: `PostgresStore` (`DATABASE_URL`), `BlobStore` (private Vercel Blob, `BLOB_READ_WRITE_TOKEN`, ETag-conditional writes), or `FileStore` (`data/session.json`). |
+| `src/session.js` | The orchestrator: modes, the job queue and lease, group and private turns, drafts, the team board, approvals, memory writes, sign-off, friction and recovery, Slack ingest, analytics, per-viewer views, the LLM usage cap. |
+| `src/agent.js` | The Planner / Worker / Reviewer crew, criticality rules, the speaking threshold, prompts and the tool loop, and offline heuristics. |
+| `src/tools.js` | Team tools, the per-turn workspace, and the outside-write policy. |
+| `src/mcp/` | MCP client (Streamable HTTP and stdio), the connector registry, and the built-in web reader. |
+| `src/slack.js` | Slack API calls, signature checks, thread mirroring, and the built-in Slack connector. |
 | `src/memory.js` | `GlobalMemory` and `PairMemory` (including the user model). |
 | `src/llm.js` | Adapter for the Cursor SDK (tool-less agent), Anthropic, OpenAI, or offline mode, plus a tolerant JSON parser. |
 | `src/presets.js` | Task presets with per-pair private briefs. |
 | `public/` | Single-page UI: `index.html`, `app.js`, `style.css`. |
-| `test/session.test.js` | Test suite (node:test). |
+| `test/*.test.js` | Test suite (node:test): session rules, integrations (MCP, Slack, web reader), and storage. |
 | `docs/` | Literature review, the source paper (PDF), and the presentation (PPTX). |
 
 **Concurrency.** Every request rebuilds the Session from the stored snapshot, applies one action, and saves it only if the stored version hasn't moved; otherwise it retries. Agent turns are split into two short transactions around the LLM call. Humans can keep posting while agents think, and a turn that finishes after a new task has started is discarded.
@@ -346,10 +402,12 @@ When `ACCESS_CODE` is set, every route except `/api/config` needs the header `x-
 | Method & path | Purpose |
 |---|---|
 | `GET /` , `/app.js`, `/style.css` | Static UI |
-| `GET /api/config` | `{ gated, llm }`, used by the sign-in screen |
+| `GET /api/config` | `{ gated, llm, slack, storage }`, used by the sign-in screen. `storage` is `postgres`, `blob`, `file`, or `memory`; `memory` means seats on Vercel do not share state |
 | `GET /api/state?as=A\|B\|C\|observer&v=<version>` | That viewer's filtered view and the state version, or `{ unchanged: true }` if `v` is current |
 | `GET /api/presets` | List presets `{ key, title, criticality, description }` |
 | `GET /api/export` | The full session JSON |
+| `GET /api/connectors[?probe=1]` | Connectors with status and setup notes; `probe=1` also connects and lists their tools |
+| `POST /api/slack/events` | Slack Events API webhook (signature-checked; not behind the access code) |
 | `POST /api/action` | Perform an action: `{ "type": "...", ...fields }` |
 
 Action types:
@@ -361,6 +419,7 @@ Action types:
 | `setPairConfig` | `pairId`, optional `humanName`, `agentName`, `role`, `teaching` |
 | `post` | `pairId`, `channel` (`group` / `pair`), `text` |
 | `reviewDraft` | `pairId`, `draftId`, `action` (`approve` / `edit` / `explain` / `revise` / `reject`), optional `text` or `feedback` |
+| `decideAction` | `pairId`, `approvalId`, `decision` (`approve` / `reject`) for an outside write on the approvals list |
 | `flagFriction` | `pairId`, `messageId`, `source` (`me` / `agent` / `both`) |
 | `addMemory` | `pairId`, `scope` (global or pair), `type`, `text` |
 | `shareNote` | `pairId`, `noteId` |
@@ -384,8 +443,8 @@ curl -X POST localhost:8790/api/action -H 'content-type: application/json' \
 
 - The session keeps the last 400 events (`{ ts, type, ...details }`) inside its snapshot, and they are included in the export. The event types are:
   `task_created, mode_changed, pair_config, human_post, agent_turn, agent_private, draft_reviewed, draft_revised, memory_added, memory_removed, note_shared, signed_off, friction_flagged, friction_recovery, reset`.
-- Locally, `data/session.json` holds the latest full state and is reloaded on startup. On Vercel, the snapshot lives in the `triad_state` Postgres table, which is created automatically.
-- **Export session** returns `{ exportedAt, llm, task, pairs, group, pairThreads, drafts, global, pairMem, frictions, modeHistory, analytics, events }`.
+- Locally, `data/session.json` (or `DATA_FILE`) holds the latest full state and is reloaded on startup. In production the snapshot lives in the `triad_state` Postgres table when `DATABASE_URL` is set, otherwise in the private blob `triad/state.json`.
+- **Export session** returns `{ exportedAt, llm, task, channel, pairs, group, pairThreads, agentThread, drafts, traces, global, pairMem, approvals, frictions, modeHistory, analytics, events }`.
 
 `data/` is git-ignored because it may contain participant text.
 
@@ -402,7 +461,13 @@ curl -X POST localhost:8790/api/action -H 'content-type: application/json' \
 | `LLM_MODEL` | `composer-2.5` / `claude-sonnet-4-5` / `gpt-4o-mini` | Override the model |
 | `LLM_DAILY_CAP` | `150` | Maximum agent LLM calls per UTC day; after that, agents use offline heuristics |
 | `ACCESS_CODE` | (unset) | If set, the UI and API require this code |
-| `DATABASE_URL` / `POSTGRES_URL` | (unset) | Postgres connection string; without it, state goes to `data/session.json` |
+| `DATABASE_URL` / `POSTGRES_URL` | (unset) | Postgres connection string (checked first) |
+| `BLOB_READ_WRITE_TOKEN` | (unset) | Private Vercel Blob store for the shared state when there is no Postgres; set automatically when a Blob store is linked |
+| `DATA_FILE` | `data/session.json` | Local state file when neither store above is set |
+| `DRAIN_BUDGET_MS` | `60000` | How long one background drain runs agent jobs before leaving the rest for the next request |
+| `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`, `SLACK_SIGNING_SECRET`, `SLACK_USER_MAP` | (unset) | Slack bridge (see [Slack bridge](#slack-bridge)) |
+| `GITHUB_TOKEN`, `LINEAR_API_KEY`, `NOTION_TOKEN` | (unset) | Turn on those connectors |
+| `MCP_SERVERS` | (unset) | JSON array of extra MCP servers (same shape as `mcp.config.json`) |
 
 ## Deploying to Vercel
 
@@ -410,7 +475,8 @@ The repo deploys as a static site (`public/`) plus Vercel Functions (`api/`). `v
 
 ```bash
 npx vercel link --project triad-collab
-npx vercel integration add neon          # Postgres; sets DATABASE_URL on the project
+npx vercel blob create-store triad-state --access private --yes   # sets BLOB_READ_WRITE_TOKEN
+# or Postgres instead: npx vercel integration add neon             # sets DATABASE_URL
 printf '%s' "$CURSOR_API_KEY" | npx vercel env add CURSOR_API_KEY production --sensitive
 printf '%s' 'composer-2.5'   | npx vercel env add LLM_MODEL production
 printf '%s' '150'            | npx vercel env add LLM_DAILY_CAP production
@@ -418,7 +484,7 @@ printf '%s' "$ACCESS_CODE"   | npx vercel env add ACCESS_CODE production --sensi
 npx vercel deploy --prod
 ```
 
-The deployment needs a database. Each Vercel Function has its own memory, so without `DATABASE_URL` the state would not be shared across requests.
+The deployment needs a shared store. Each Vercel Function has its own memory, so without Postgres or Blob the state would not be shared across requests, and `/api/config` reports `storage: "memory"`. Both stores reject stale writes (Postgres by version, Blob by ETag), so concurrent requests retry instead of overwriting each other.
 
 Tunable constants in code: `SPEAK_THRESHOLD` (`src/agent.js`), `MAX_AGENT_CHAIN` (`src/session.js`), and the agency thresholds in `agencyLevel()` (`src/session.js`).
 
@@ -430,8 +496,13 @@ Tunable constants in code: `SPEAK_THRESHOLD` (`src/agent.js`), `MAX_AGENT_CHAIN`
 npm test
 ```
 
-The 12 tests cover:
+The 23 tests cover:
 - Private briefs stay private, and each agent's context contains only its own pair's memory.
+- The team board, team tools, and the outside-write policy.
+- The MCP client over Streamable HTTP (JSON and SSE responses, pagination, session reuse).
+- Slack signature checks and Slack replies joining the team thread once.
+- The web reader blocking private addresses.
+- The Blob store's conditional writes, including two instances writing at once.
 - Shared notes carry provenance.
 - Mode rules (Agent only humans can't post; Human only agents stay silent).
 - Paired agents draft while solo agents post.

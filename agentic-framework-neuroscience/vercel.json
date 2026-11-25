@@ -3,7 +3,7 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "functions": {
-    "api/action.js": {
+    "api/**/*.js": {
       "maxDuration": 120,
       "includeFiles": "node_modules/@cursor/**"
     }

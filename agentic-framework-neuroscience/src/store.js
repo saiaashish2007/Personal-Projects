@@ -10,6 +10,7 @@ import path from 'node:path';
 class FileStore {
   constructor(file) {
     this.file = file;
+    this.kind = file ? 'file' : 'memory';
     this.version = 0;
     this.data = null;
     if (file && fs.existsSync(file)) {
@@ -40,6 +41,7 @@ class FileStore {
 class PostgresStore {
   constructor(url) {
     this.url = url;
+    this.kind = 'postgres';
     this.ready = null;
   }
 
@@ -80,7 +82,66 @@ class PostgresStore {
   }
 }
 
+/**
+ * One private Vercel Blob holds `{ version, data }`. Writes are conditional on
+ * the ETag seen by the matching read, so a stale writer gets a precondition
+ * failure instead of overwriting newer state.
+ */
+export class BlobStore {
+  constructor({ token, pathname = 'triad/state.json', sdk = null } = {}) {
+    this.token = token;
+    this.pathname = pathname;
+    this.kind = 'blob';
+    this.sdk = sdk;
+    this.etags = new Map();
+  }
+
+  async blob() {
+    if (!this.sdk) this.sdk = await import('@vercel/blob');
+    return this.sdk;
+  }
+
+  async read() {
+    const { get } = await this.blob();
+    const res = await get(this.pathname, { access: 'private', useCache: false, token: this.token });
+    if (!res || res.statusCode !== 200) return { version: 0, data: null };
+    const { version, data } = JSON.parse(await new Response(res.stream).text());
+    this.etags.set(version, res.blob.etag);
+    return { version, data };
+  }
+
+  async write(data, expectedVersion) {
+    const { put } = await this.blob();
+    const body = JSON.stringify({ version: expectedVersion + 1, data });
+    const options = { access: 'private', contentType: 'application/json', addRandomSuffix: false, cacheControlMaxAge: 60, token: this.token };
+    if (expectedVersion === 0) {
+      options.allowOverwrite = false;
+    } else {
+      const etag = this.etags.get(expectedVersion);
+      if (!etag) return false;
+      options.allowOverwrite = true;
+      options.ifMatch = etag;
+    }
+    try {
+      const res = await put(this.pathname, body, options);
+      this.etags.clear();
+      this.etags.set(expectedVersion + 1, res.etag);
+      return true;
+    } catch (err) {
+      if (isWriteConflict(err)) return false;
+      throw err;
+    }
+  }
+}
+
+function isWriteConflict(err) {
+  const name = err?.constructor?.name ?? err?.name ?? '';
+  return name === 'BlobPreconditionFailedError' || /precondition|already exists/i.test(String(err?.message));
+}
+
 export function createStore({ file = null } = {}) {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-  return url ? new PostgresStore(url) : new FileStore(file);
+  if (url) return new PostgresStore(url);
+  if (process.env.BLOB_READ_WRITE_TOKEN) return new BlobStore({ token: process.env.BLOB_READ_WRITE_TOKEN });
+  return new FileStore(file);
 }
